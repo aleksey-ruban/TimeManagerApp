@@ -7,6 +7,8 @@ Docs/
 Derived/
 TimeManagerApp.xcodeproj/
 TimeManagerApp.xcworkspace/
+*.xcodeproj/
+*.xcworkspace/
 Tuist/.swiftpm/
 
 # Thumbnails
@@ -31,6 +33,7 @@ xcuserdata/
 # Xcode build artifacts
 build/
 DerivedData/
+DerivedData*/
 
 # Obj-C/Swift specific
 *.hmap
