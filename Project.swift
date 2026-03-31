@@ -62,6 +62,9 @@ let project = Project(
             infoPlist: .file(path: "TimeManagerApp/Info.plist"),
             sources: appSources,
             resources: appResources,
+            dependencies: [
+                .project(target: "CoreNetwork", path: "Modules/Core/Network"),
+            ],
             settings: .settings(base: appSettings)
         ),
         .target(
@@ -74,6 +77,7 @@ let project = Project(
             sources: ["Tests/TimeManagerAppTests/**/*.swift"],
             dependencies: [
                 .target(name: AppConfig.name),
+                .project(target: "CoreNetwork", path: "Modules/Core/Network"),
             ],
             settings: .settings(base: testSettings)
         ),
