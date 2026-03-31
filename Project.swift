@@ -64,6 +64,7 @@ let project = Project(
             resources: appResources,
             dependencies: [
                 .project(target: "CoreNetwork", path: "Modules/Core/Network"),
+                .project(target: "CoreAuth", path: "Modules/Core/Auth"),
                 .project(target: "CoreStorage", path: "Modules/Core/Storage"),
             ],
             settings: .settings(base: appSettings)
@@ -79,6 +80,7 @@ let project = Project(
             dependencies: [
                 .target(name: AppConfig.name),
                 .project(target: "CoreNetwork", path: "Modules/Core/Network"),
+                .project(target: "CoreAuth", path: "Modules/Core/Auth"),
                 .project(target: "CoreStorage", path: "Modules/Core/Storage"),
             ],
             settings: .settings(base: testSettings)
