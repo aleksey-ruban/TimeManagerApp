@@ -3,7 +3,7 @@ import ProjectDescription
 private enum AppConfig {
     static let name = "TimeManagerApp"
     static let bundleId = "com.alekseyruban.TimeManagerApp"
-    static let deploymentTarget: DeploymentTargets = .iOS("26.2")
+    static let deploymentTarget: DeploymentTargets = .iOS("16.0")
     static let developmentTeam = "5P2MVJMNMA"
     static let marketingVersion = "1.0"
     static let currentProjectVersion = "1"
@@ -31,10 +31,7 @@ private let testSettings: SettingsDictionary = baseSettings.merging([
 ])
 
 private let appSources: SourceFilesList = [
-    "TimeManagerApp/**/*.swift",
-    "Modules/Core/**/*.swift",
-    "Modules/Common/**/*.swift",
-    "Modules/Feature/**/*.swift",
+    .glob("TimeManagerApp/**/*.swift"),
 ]
 
 private let appResources: ResourceFileElements = [
