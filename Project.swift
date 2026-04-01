@@ -66,6 +66,7 @@ let project = Project(
                 .project(target: "CoreNetwork", path: "Modules/Core/Network"),
                 .project(target: "CoreAuth", path: "Modules/Core/Auth"),
                 .project(target: "CoreStorage", path: "Modules/Core/Storage"),
+                .project(target: "CoreSync", path: "Modules/Core/Sync"),
             ],
             settings: .settings(base: appSettings)
         ),
@@ -82,6 +83,7 @@ let project = Project(
                 .project(target: "CoreNetwork", path: "Modules/Core/Network"),
                 .project(target: "CoreAuth", path: "Modules/Core/Auth"),
                 .project(target: "CoreStorage", path: "Modules/Core/Storage"),
+                .project(target: "CoreSync", path: "Modules/Core/Sync"),
             ],
             settings: .settings(base: testSettings)
         ),
