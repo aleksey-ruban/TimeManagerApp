@@ -63,6 +63,8 @@ let project = Project(
             sources: appSources,
             resources: appResources,
             dependencies: [
+                .project(target: "DesignSystem", path: "Modules/Common/DesignSystem"),
+                .project(target: "DesignTokens", path: "Modules/Common/DesignTokens"),
                 .project(target: "CoreNetwork", path: "Modules/Core/Network"),
                 .project(target: "CoreAuth", path: "Modules/Core/Auth"),
                 .project(target: "CoreStorage", path: "Modules/Core/Storage"),
@@ -80,6 +82,8 @@ let project = Project(
             sources: ["Tests/TimeManagerAppTests/**/*.swift"],
             dependencies: [
                 .target(name: AppConfig.name),
+                .project(target: "DesignSystem", path: "Modules/Common/DesignSystem"),
+                .project(target: "DesignTokens", path: "Modules/Common/DesignTokens"),
                 .project(target: "CoreNetwork", path: "Modules/Core/Network"),
                 .project(target: "CoreAuth", path: "Modules/Core/Auth"),
                 .project(target: "CoreStorage", path: "Modules/Core/Storage"),
