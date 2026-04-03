@@ -9,13 +9,16 @@ extension URLSession: URLSessionProtocol {}
 final class URLSessionNetworkClient: NetworkClientProtocol {
     private let session: URLSessionProtocol
     private let requestBuilder: RequestBuilding
+    private let logger: NetworkLogging
 
     init(
         session: URLSessionProtocol = URLSession.shared,
-        requestBuilder: RequestBuilding = RequestBuilder()
+        requestBuilder: RequestBuilding = RequestBuilder(),
+        logger: NetworkLogging = NetworkLogger(configuration: .disabled)
     ) {
         self.session = session
         self.requestBuilder = requestBuilder
+        self.logger = logger
     }
 
     func execute(_ request: NetworkRequest) async throws -> NetworkResponse {
@@ -26,6 +29,8 @@ final class URLSessionNetworkClient: NetworkClientProtocol {
         } catch {
             throw NetworkErrorMapper.map(error)
         }
+
+        logger.logRequest(urlRequest)
 
         do {
             let (data, response) = try await session.data(for: urlRequest)

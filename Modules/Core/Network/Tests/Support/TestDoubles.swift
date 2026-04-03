@@ -97,3 +97,19 @@ final class URLSessionStub: URLSessionProtocol, @unchecked Sendable {
         return try result.get()
     }
 }
+
+final class NetworkLoggerSpy: NetworkLogging, @unchecked Sendable {
+    private(set) var loggedRequests: [URLRequest] = []
+
+    func logRequest(_ request: URLRequest) {
+        loggedRequests.append(request)
+    }
+}
+
+final class NetworkLogWriterSpy: NetworkLogWriting, @unchecked Sendable {
+    private(set) var messages: [String] = []
+
+    func write(_ message: String) {
+        messages.append(message)
+    }
+}

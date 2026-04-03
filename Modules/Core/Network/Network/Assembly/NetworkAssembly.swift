@@ -5,16 +5,21 @@ public protocol NetworkAssemblyProtocol: Sendable {
 }
 
 public struct NetworkAssembly: NetworkAssemblyProtocol {
-    
     private let authInterceptor: AuthInterceptorProtocol?
-    
-    public init(authInterceptor: AuthInterceptorProtocol?) {
+    private let loggingConfiguration: NetworkLoggingConfiguration
+
+    public init(
+        authInterceptor: AuthInterceptorProtocol?,
+        loggingConfiguration: NetworkLoggingConfiguration = .disabled
+    ) {
         self.authInterceptor = authInterceptor
+        self.loggingConfiguration = loggingConfiguration
     }
-    
+
     public func makeExecutorFactory() -> NetworkExecutorFactoryProtocol {
         let session = NetworkSessionFactory.makeDefault()
-        let transportClient = URLSessionNetworkClient(session: session)
+        let logger = NetworkLogger(configuration: loggingConfiguration)
+        let transportClient = URLSessionNetworkClient(session: session, logger: logger)
         let networkClient = RetryingNetworkClient(nextClient: transportClient)
 
         return NetworkExecutorFactory(

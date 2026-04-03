@@ -10,7 +10,8 @@ final class URLSessionNetworkClientTests: XCTestCase {
                 httpResponse(statusCode: 200)
             ))
         )
-        let client = URLSessionNetworkClient(session: session)
+        let logger = NetworkLoggerSpy()
+        let client = URLSessionNetworkClient(session: session, logger: logger)
         let request = NetworkRequest(
             method: .get,
             baseURL: URL(string: "https://example.com")!,
@@ -22,6 +23,8 @@ final class URLSessionNetworkClientTests: XCTestCase {
         XCTAssertEqual(response.statusCode, 200)
         XCTAssertEqual(session.capturedRequest?.url?.absoluteString, "https://example.com/health")
         XCTAssertEqual(session.capturedRequest?.httpMethod, "GET")
+        XCTAssertEqual(logger.loggedRequests.count, 1)
+        XCTAssertEqual(logger.loggedRequests.first?.url?.absoluteString, "https://example.com/health")
     }
 
     func testURLSessionNetworkClientMapsHTTPErrorResponse() async {
