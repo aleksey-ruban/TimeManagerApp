@@ -72,7 +72,9 @@ timeline.xctimeline
 playground.xcworkspace
 
 # Swift Package Manager
-# Package.resolved
+Package.resolved
+Tuist/Package.resolved
+Tuist/.build/
 
 
 # Custom from project

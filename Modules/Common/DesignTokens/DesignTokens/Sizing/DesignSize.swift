@@ -11,6 +11,8 @@ public enum DesignSize {
     public static let primaryButtonCornerRadius: CGFloat = 18
     public static let primaryButtonHeight: CGFloat = 58
     public static let linkButtonHeight: CGFloat = 38
+    public static let loadingIndicatorContainerCornerRadius: CGFloat = 8
+    public static let loadingIndicatorContainerSize: CGFloat = 44
     public static let floatingBottomContainerRoundedScreenBottomInset: CGFloat = 58
     public static let floatingBottomContainerGradientHeight: CGFloat = 100
 }
