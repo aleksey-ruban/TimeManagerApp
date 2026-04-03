@@ -27,16 +27,18 @@ struct NetworkAuthAPIService: AuthAPIServiceProtocol {
 
     func login(with credentials: AuthCredentials, isAutomatic: Bool) async throws -> AuthTokens {
         let deviceID = try deviceIDStore.loadOrCreateDeviceID()
+        let deviceModel = await deviceModelProvider.deviceModel()
         let requestBody = LoginRequestBody(
             email: credentials.email,
             password: credentials.password,
             deviceId: deviceID,
-            deviceModel: deviceModelProvider.deviceModel(),
+            deviceModel: deviceModel,
             isAutomatic: isAutomatic
         )
         let request = try makeRequest(
             path: configuration.loginPath,
-            body: requestBody
+            body: requestBody,
+            idempotencyKey: UUID().uuidString.lowercased()
         )
         let executor = networkExecutorFactory.makeExecutor()
         let parser = Parser<AuthTokensPayload>(decoder: jsonDecoder)
@@ -45,13 +47,13 @@ struct NetworkAuthAPIService: AuthAPIServiceProtocol {
     }
 
     func refresh(session: StoredAuthSession) async throws -> AuthTokens {
-        let deviceID = try deviceIDStore.loadOrCreateDeviceID()
         let requestBody = RefreshRequestBody(
             refreshToken: session.tokens.refreshToken
         )
         let request = try makeRequest(
             path: configuration.refreshPath,
-            body: requestBody
+            body: requestBody,
+            idempotencyKey: UUID().uuidString.lowercased()
         )
         let executor = networkExecutorFactory.makeExecutor()
         let parser = Parser<AuthTokensPayload>(decoder: jsonDecoder)
@@ -64,7 +66,8 @@ struct NetworkAuthAPIService: AuthAPIServiceProtocol {
 
     private func makeRequest<Body: Encodable>(
         path: String,
-        body: Body
+        body: Body,
+        idempotencyKey: String
     ) throws -> NetworkRequest {
         let bodyData = try jsonEncoder.encode(body)
         return NetworkRequest(
@@ -76,7 +79,7 @@ struct NetworkAuthAPIService: AuthAPIServiceProtocol {
             ],
             body: .data(bodyData, contentType: "application/json"),
             retryPolicy: .none,
-            idempotency: .unsafe
+            idempotency: .key(idempotencyKey)
         )
     }
 

@@ -7,12 +7,17 @@ protocol AuthAssemblyProtocol: Sendable {
 
 public struct AuthAssembly: AuthAssemblyProtocol {
     private let configuration: AuthAPIConfiguration
+    private let networkExecutorFactory: NetworkExecutorFactoryProtocol
     private let tokenStore: TokenStoreProtocol
     private let deviceIDStore: DeviceIDStoreProtocol
     private let deviceModelProvider: DeviceModelProviderProtocol
 
-    public init(configuration: AuthAPIConfiguration) {
+    public init(
+        configuration: AuthAPIConfiguration,
+        networkExecutorFactory: NetworkExecutorFactoryProtocol
+    ) {
         self.configuration = configuration
+        self.networkExecutorFactory = networkExecutorFactory
         self.tokenStore = KeychainTokenStore()
         self.deviceIDStore = KeychainDeviceIDStore()
         self.deviceModelProvider = SystemDeviceModelProvider()
@@ -20,27 +25,29 @@ public struct AuthAssembly: AuthAssemblyProtocol {
 
     init(
         configuration: AuthAPIConfiguration,
+        networkExecutorFactory: NetworkExecutorFactoryProtocol,
         tokenStore: TokenStoreProtocol,
         deviceIDStore: DeviceIDStoreProtocol,
         deviceModelProvider: DeviceModelProviderProtocol
     ) {
         self.configuration = configuration
+        self.networkExecutorFactory = networkExecutorFactory
         self.tokenStore = tokenStore
         self.deviceIDStore = deviceIDStore
         self.deviceModelProvider = deviceModelProvider
     }
 
     public func makeModule() throws -> AuthModule {
-        let authNetworkExecutorFactory = NetworkAssembly(authInterceptor: nil).makeExecutorFactory()
         let apiService = NetworkAuthAPIService(
-            networkExecutorFactory: authNetworkExecutorFactory,
+            networkExecutorFactory: networkExecutorFactory,
             configuration: configuration,
             deviceIDStore: deviceIDStore,
             deviceModelProvider: deviceModelProvider
         )
         let authService = try AuthService(
             tokenStore: tokenStore,
-            apiService: apiService
+            apiService: apiService,
+            deviceIDStore: deviceIDStore
         )
         let authInterceptor = AuthInterceptor(authSession: authService)
 

@@ -4,6 +4,7 @@ import CoreNetwork
 actor AuthService: AuthSessionProtocol, AuthFeatureServiceProtocol {
     private let tokenStore: TokenStoreProtocol
     private let apiService: AuthAPIServiceProtocol
+    private let deviceIDStore: DeviceIDStoreProtocol
 
     private var storedSession: StoredAuthSession?
     private var state: AuthState
@@ -13,10 +14,12 @@ actor AuthService: AuthSessionProtocol, AuthFeatureServiceProtocol {
 
     init(
         tokenStore: TokenStoreProtocol,
-        apiService: AuthAPIServiceProtocol
+        apiService: AuthAPIServiceProtocol,
+        deviceIDStore: DeviceIDStoreProtocol
     ) throws {
         self.tokenStore = tokenStore
         self.apiService = apiService
+        self.deviceIDStore = deviceIDStore
         let storedSession = try tokenStore.load()
         self.storedSession = storedSession
         self.state = storedSession == nil ? .unauthenticated : .authenticatedAndTokensFresh
@@ -47,11 +50,25 @@ actor AuthService: AuthSessionProtocol, AuthFeatureServiceProtocol {
     func login(email: String, password: String) async throws {
         let credentials = AuthCredentials(email: email, password: password)
         let tokens = try await apiService.login(with: credentials, isAutomatic: false)
-        let session = StoredAuthSession(credentials: credentials, tokens: tokens)
+        try storeAuthenticatedSession(credentials: credentials, tokens: tokens)
+    }
 
-        try tokenStore.save(session)
-        storedSession = session
-        updateState(.authenticatedAndTokensFresh)
+    func acceptAuthenticatedSession(
+        email: String,
+        password: String,
+        accessToken: String,
+        refreshToken: String
+    ) async throws {
+        let credentials = AuthCredentials(email: email, password: password)
+        let tokens = AuthTokens(
+            accessToken: accessToken,
+            refreshToken: refreshToken
+        )
+        try storeAuthenticatedSession(credentials: credentials, tokens: tokens)
+    }
+
+    func currentDeviceID() throws -> String {
+        try deviceIDStore.loadOrCreateDeviceID()
     }
 
     func logout() async throws {
@@ -169,11 +186,7 @@ actor AuthService: AuthSessionProtocol, AuthFeatureServiceProtocol {
     private func automaticLogin(with credentials: AuthCredentials) async throws -> StoredAuthSession {
         do {
             let tokens = try await apiService.login(with: credentials, isAutomatic: true)
-            let session = StoredAuthSession(credentials: credentials, tokens: tokens)
-            try tokenStore.save(session)
-            storedSession = session
-            updateState(.authenticatedAndTokensFresh)
-            return session
+            return try storeAuthenticatedSession(credentials: credentials, tokens: tokens)
         } catch {
             guard shouldRequireManualAuthorization(for: error) else {
                 throw error
@@ -188,6 +201,18 @@ actor AuthService: AuthSessionProtocol, AuthFeatureServiceProtocol {
         try tokenStore.clear()
         storedSession = nil
         updateState(.unauthenticated)
+    }
+
+    @discardableResult
+    private func storeAuthenticatedSession(
+        credentials: AuthCredentials,
+        tokens: AuthTokens
+    ) throws -> StoredAuthSession {
+        let session = StoredAuthSession(credentials: credentials, tokens: tokens)
+        try tokenStore.save(session)
+        storedSession = session
+        updateState(.authenticatedAndTokensFresh)
+        return session
     }
 
     private func sign(_ request: NetworkRequest, accessToken: String) -> NetworkRequest {

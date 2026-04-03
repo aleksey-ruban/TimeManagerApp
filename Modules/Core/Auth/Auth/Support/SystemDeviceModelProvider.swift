@@ -7,6 +7,7 @@ import UIKit
 struct SystemDeviceModelProvider: DeviceModelProviderProtocol {
     init() {}
 
+    @MainActor
     func deviceModel() -> String {
         #if canImport(UIKit)
         UIDevice.current.model
