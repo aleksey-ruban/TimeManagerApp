@@ -7,7 +7,8 @@ final class AuthSessionTests: XCTestCase {
     func testAuthStateIsUnauthenticatedWhenThereIsNoStoredSession() async throws {
         let session = try AuthService(
             tokenStore: InMemoryTokenStore(),
-            apiService: AuthAPIServiceStub()
+            apiService: AuthAPIServiceStub(),
+            deviceIDStore: DeviceIDStoreStub()
         )
 
         let state = await session.authState()
@@ -27,7 +28,8 @@ final class AuthSessionTests: XCTestCase {
         )
         let session = try AuthService(
             tokenStore: tokenStore,
-            apiService: apiService
+            apiService: apiService,
+            deviceIDStore: DeviceIDStoreStub()
         )
 
         try await session.login(
@@ -55,7 +57,8 @@ final class AuthSessionTests: XCTestCase {
         let apiService = AuthAPIServiceStub(refreshResult: .success(newTokens))
         let session = try AuthService(
             tokenStore: tokenStore,
-            apiService: apiService
+            apiService: apiService,
+            deviceIDStore: DeviceIDStoreStub()
         )
         try await session.recoverAuthorization(for: unauthorizedRequest())
         let request = NetworkRequest(
@@ -86,7 +89,8 @@ final class AuthSessionTests: XCTestCase {
         )
         let session = try AuthService(
             tokenStore: InMemoryTokenStore(storedSession: storedSession),
-            apiService: apiService
+            apiService: apiService,
+            deviceIDStore: DeviceIDStoreStub()
         )
 
         let recoveredRequest = try await session.recoverAuthorization(for: unauthorizedRequest())
@@ -113,7 +117,8 @@ final class AuthSessionTests: XCTestCase {
         let apiService = AuthAPIServiceStub()
         let session = try AuthService(
             tokenStore: InMemoryTokenStore(storedSession: storedSession),
-            apiService: apiService
+            apiService: apiService,
+            deviceIDStore: DeviceIDStoreStub()
         )
         let failedRequest = NetworkRequest(
             method: .get,
@@ -139,7 +144,8 @@ final class AuthSessionTests: XCTestCase {
         )
         let session = try AuthService(
             tokenStore: tokenStore,
-            apiService: apiService
+            apiService: apiService,
+            deviceIDStore: DeviceIDStoreStub()
         )
 
         do {
@@ -166,7 +172,8 @@ final class AuthSessionTests: XCTestCase {
         )
         let session = try AuthService(
             tokenStore: tokenStore,
-            apiService: apiService
+            apiService: apiService,
+            deviceIDStore: DeviceIDStoreStub()
         )
 
         do {
@@ -209,7 +216,8 @@ final class AuthSessionTests: XCTestCase {
         let tokenStore = InMemoryTokenStore(storedSession: makeSession())
         let session = try AuthService(
             tokenStore: tokenStore,
-            apiService: AuthAPIServiceStub()
+            apiService: AuthAPIServiceStub(),
+            deviceIDStore: DeviceIDStoreStub()
         )
 
         try await session.logout()
@@ -218,6 +226,39 @@ final class AuthSessionTests: XCTestCase {
 
         XCTAssertEqual(state, .unauthenticated)
         XCTAssertEqual(tokenStore.clearCallCount, 1)
+    }
+
+    func testAcceptAuthenticatedSessionStoresPassedTokens() async throws {
+        let tokenStore = InMemoryTokenStore()
+        let session = try AuthService(
+            tokenStore: tokenStore,
+            apiService: AuthAPIServiceStub(),
+            deviceIDStore: DeviceIDStoreStub()
+        )
+
+        try await session.acceptAuthenticatedSession(
+            email: "alekseyruban555@gmail.com",
+            password: "Qwert-123",
+            accessToken: "access-token",
+            refreshToken: "refresh-token"
+        )
+
+        let request = try await session.authorize(authorizedRequest())
+
+        XCTAssertEqual(tokenStore.storedSession?.tokens.accessToken, "access-token")
+        XCTAssertEqual(request.headers["Authorization"], "Bearer access-token")
+    }
+
+    func testCurrentDeviceIDUsesStableDeviceIdentifierProvider() async throws {
+        let session = try AuthService(
+            tokenStore: InMemoryTokenStore(),
+            apiService: AuthAPIServiceStub(),
+            deviceIDStore: DeviceIDStoreStub(deviceID: "stable-device-id")
+        )
+
+        let deviceID = try await session.currentDeviceID()
+
+        XCTAssertEqual(deviceID, "stable-device-id")
     }
 
     func testStateUpdatesYieldCurrentStateAtSubscriptionTime() async throws {
@@ -230,7 +271,8 @@ final class AuthSessionTests: XCTestCase {
                         refreshToken: "new-refresh"
                     )
                 )
-            )
+            ),
+            deviceIDStore: DeviceIDStoreStub()
         )
 
         try await session.login(

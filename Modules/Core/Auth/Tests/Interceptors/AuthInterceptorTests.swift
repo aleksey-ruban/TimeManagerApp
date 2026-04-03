@@ -7,7 +7,8 @@ final class AuthInterceptorTests: XCTestCase {
     func testAuthInterceptorForwardsNonAuthorizedRequestsWithoutSessionInteraction() async throws {
         let session = try AuthService(
             tokenStore: InMemoryTokenStore(),
-            apiService: AuthAPIServiceStub()
+            apiService: AuthAPIServiceStub(),
+            deviceIDStore: DeviceIDStoreStub()
         )
         let client = NetworkClientQueueStub(
             results: [
@@ -42,7 +43,8 @@ final class AuthInterceptorTests: XCTestCase {
         )
         let session = try AuthService(
             tokenStore: tokenStore,
-            apiService: apiService
+            apiService: apiService,
+            deviceIDStore: DeviceIDStoreStub()
         )
         let client = NetworkClientQueueStub(
             results: [
@@ -72,7 +74,8 @@ final class AuthInterceptorTests: XCTestCase {
         let interceptor = AuthInterceptor(
             authSession: try AuthService(
                 tokenStore: InMemoryTokenStore(),
-                apiService: AuthAPIServiceStub()
+                apiService: AuthAPIServiceStub(),
+                deviceIDStore: DeviceIDStoreStub()
             )
         )
         let client = NetworkClientQueueStub(results: [])
