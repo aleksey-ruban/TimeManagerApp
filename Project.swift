@@ -63,6 +63,7 @@ let project = Project(
             sources: appSources,
             resources: appResources,
             dependencies: [
+                .project(target: "CommonUserProfile", path: "Modules/Common/UserProfile"),
                 .project(target: "Domain", path: "Modules/Common/Domain"),
                 .project(target: "DesignSystem", path: "Modules/Common/DesignSystem"),
                 .project(target: "DesignTokens", path: "Modules/Common/DesignTokens"),
@@ -84,6 +85,7 @@ let project = Project(
             sources: ["Tests/TimeManagerAppTests/**/*.swift"],
             dependencies: [
                 .target(name: AppConfig.name),
+                .project(target: "CommonUserProfile", path: "Modules/Common/UserProfile"),
                 .project(target: "Domain", path: "Modules/Common/Domain"),
                 .project(target: "DesignSystem", path: "Modules/Common/DesignSystem"),
                 .project(target: "DesignTokens", path: "Modules/Common/DesignTokens"),
