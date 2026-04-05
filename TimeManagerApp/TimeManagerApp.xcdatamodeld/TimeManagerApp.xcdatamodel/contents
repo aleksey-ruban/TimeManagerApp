@@ -1,4 +1,99 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="1" systemVersion="11A491" minimumToolsVersion="Automatic" sourceLanguage="Swift" usedWithCloudKit="false" userDefinedModelVersionIdentifier="">
-    <elements/>
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="24512" systemVersion="24G517" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
+    <entity name="ActivityMO" representedClassName="ActivityMO" syncable="YES">
+        <attribute name="colorRawValue" attributeType="String"/>
+        <attribute name="iconName" attributeType="String"/>
+        <attribute name="isDirty" attributeType="Boolean" defaultValueString="NO"/>
+        <attribute name="lastModifiedVersion" optional="YES" attributeType="Integer 64" usesScalarValueType="NO"/>
+        <attribute name="localID" attributeType="UUID"/>
+        <attribute name="name" attributeType="String"/>
+        <attribute name="remoteID" optional="YES" attributeType="Integer 64" usesScalarValueType="NO"/>
+        <attribute name="syncDeleted" attributeType="Boolean" defaultValueString="NO"/>
+        <relationship name="category" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="CategoryMO" inverseName="activities" inverseEntity="CategoryMO"/>
+        <relationship name="records" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="ActivityRecordMO" inverseName="activity" inverseEntity="ActivityRecordMO"/>
+        <relationship name="variations" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="ActivityVariationMO" inverseName="activity" inverseEntity="ActivityVariationMO"/>
+    </entity>
+    <entity name="ActivityRecordMO" representedClassName="ActivityRecordMO" syncable="YES">
+        <attribute name="endedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="isDirty" attributeType="Boolean" defaultValueString="NO"/>
+        <attribute name="lastModifiedVersion" optional="YES" attributeType="Integer 64" usesScalarValueType="NO"/>
+        <attribute name="localID" attributeType="UUID"/>
+        <attribute name="remoteID" optional="YES" attributeType="Integer 64" usesScalarValueType="NO"/>
+        <attribute name="startedAt" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="syncDeleted" attributeType="Boolean" defaultValueString="NO"/>
+        <attribute name="timeZone" attributeType="String"/>
+        <relationship name="activity" maxCount="1" deletionRule="Nullify" destinationEntity="ActivityMO" inverseName="records" inverseEntity="ActivityMO"/>
+        <relationship name="variation" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="ActivityVariationMO" inverseName="records" inverseEntity="ActivityVariationMO"/>
+    </entity>
+    <entity name="ActivityRecordSnapshotMO" representedClassName="ActivityRecordSnapshotMO" syncable="YES">
+        <attribute name="endedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="globalActivityRecordID" optional="YES" attributeType="Integer 64" usesScalarValueType="NO"/>
+        <attribute name="remoteID" optional="YES" attributeType="Integer 64" usesScalarValueType="NO"/>
+        <attribute name="startedAt" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="timeZone" attributeType="String"/>
+        <relationship name="activitySnapshot" maxCount="1" deletionRule="Nullify" destinationEntity="ActivitySnapshotMO" inverseName="activityRecordSnapshots" inverseEntity="ActivitySnapshotMO"/>
+        <relationship name="chronometry" maxCount="1" deletionRule="Nullify" destinationEntity="ChronometryMO" inverseName="activityRecordSnapshots" inverseEntity="ChronometryMO"/>
+        <relationship name="variationSnapshot" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="ActivityVariationSnapshotMO" inverseName="activityRecords" inverseEntity="ActivityVariationSnapshotMO"/>
+    </entity>
+    <entity name="ActivitySnapshotMO" representedClassName="ActivitySnapshotMO" syncable="YES">
+        <attribute name="colorRawValue" attributeType="String"/>
+        <attribute name="globalActivityID" optional="YES" attributeType="Integer 64" usesScalarValueType="NO"/>
+        <attribute name="iconName" attributeType="String"/>
+        <attribute name="name" attributeType="String"/>
+        <attribute name="remoteID" optional="YES" attributeType="Integer 64" usesScalarValueType="NO"/>
+        <relationship name="activityRecordSnapshots" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="ActivityRecordSnapshotMO" inverseName="activitySnapshot" inverseEntity="ActivityRecordSnapshotMO"/>
+        <relationship name="categorySnapshot" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="CategorySnapshotMO" inverseName="activitySnapshots" inverseEntity="CategorySnapshotMO"/>
+        <relationship name="chronometry" maxCount="1" deletionRule="Nullify" destinationEntity="ChronometryMO" inverseName="activitySnapshots" inverseEntity="ChronometryMO"/>
+        <relationship name="variationSnapshots" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="ActivityVariationSnapshotMO" inverseName="activitySnapshot" inverseEntity="ActivityVariationSnapshotMO"/>
+    </entity>
+    <entity name="ActivityVariationMO" representedClassName="ActivityVariationMO" syncable="YES">
+        <attribute name="localID" attributeType="UUID"/>
+        <attribute name="position" attributeType="Integer 64" defaultValueString="0"/>
+        <attribute name="remoteID" optional="YES" attributeType="Integer 64" usesScalarValueType="NO"/>
+        <attribute name="syncDeleted" attributeType="Boolean" defaultValueString="NO"/>
+        <attribute name="value" attributeType="String"/>
+        <relationship name="activity" maxCount="1" deletionRule="Nullify" destinationEntity="ActivityMO" inverseName="variations" inverseEntity="ActivityMO"/>
+        <relationship name="records" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="ActivityRecordMO" inverseName="variation" inverseEntity="ActivityRecordMO"/>
+    </entity>
+    <entity name="ActivityVariationSnapshotMO" representedClassName="ActivityVariationSnapshotMO" syncable="YES">
+        <attribute name="globalActivityVariationID" optional="YES" attributeType="Integer 64" usesScalarValueType="NO"/>
+        <attribute name="remoteID" optional="YES" attributeType="Integer 64" usesScalarValueType="NO"/>
+        <attribute name="value" attributeType="String"/>
+        <relationship name="activityRecords" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="ActivityRecordSnapshotMO" inverseName="variationSnapshot" inverseEntity="ActivityRecordSnapshotMO"/>
+        <relationship name="activitySnapshot" maxCount="1" deletionRule="Nullify" destinationEntity="ActivitySnapshotMO" inverseName="variationSnapshots" inverseEntity="ActivitySnapshotMO"/>
+        <relationship name="chronometry" maxCount="1" deletionRule="Nullify" destinationEntity="ChronometryMO" inverseName="activityVariationSnapshots" inverseEntity="ChronometryMO"/>
+    </entity>
+    <entity name="CategoryMO" representedClassName="CategoryMO" syncable="YES">
+        <attribute name="baseName" attributeType="String"/>
+        <attribute name="codeRawValue" optional="YES" attributeType="String"/>
+        <attribute name="isDirty" attributeType="Boolean" defaultValueString="NO"/>
+        <attribute name="lastModifiedVersion" optional="YES" attributeType="Integer 64" usesScalarValueType="NO"/>
+        <attribute name="localID" attributeType="UUID"/>
+        <attribute name="remoteID" optional="YES" attributeType="Integer 64" usesScalarValueType="NO"/>
+        <attribute name="syncDeleted" attributeType="Boolean" defaultValueString="NO"/>
+        <relationship name="activities" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="ActivityMO" inverseName="category" inverseEntity="ActivityMO"/>
+    </entity>
+    <entity name="CategorySnapshotMO" representedClassName="CategorySnapshotMO" syncable="YES">
+        <attribute name="baseName" attributeType="String"/>
+        <attribute name="codeRawValue" optional="YES" attributeType="String"/>
+        <attribute name="globalCategoryID" optional="YES" attributeType="Integer 64" usesScalarValueType="NO"/>
+        <attribute name="remoteID" optional="YES" attributeType="Integer 64" usesScalarValueType="NO"/>
+        <relationship name="activitySnapshots" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="ActivitySnapshotMO" inverseName="categorySnapshot" inverseEntity="ActivitySnapshotMO"/>
+        <relationship name="chronometry" maxCount="1" deletionRule="Nullify" destinationEntity="ChronometryMO" inverseName="categorySnapshots" inverseEntity="ChronometryMO"/>
+    </entity>
+    <entity name="ChronometryMO" representedClassName="ChronometryMO" syncable="YES">
+        <attribute name="endDate" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="isDirty" attributeType="Boolean" defaultValueString="NO"/>
+        <attribute name="isFinished" attributeType="Boolean" defaultValueString="NO"/>
+        <attribute name="lastModifiedVersion" optional="YES" attributeType="Integer 64" usesScalarValueType="NO"/>
+        <attribute name="localID" attributeType="UUID"/>
+        <attribute name="remoteID" optional="YES" attributeType="Integer 64" usesScalarValueType="NO"/>
+        <attribute name="startDate" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="syncDeleted" attributeType="Boolean" defaultValueString="NO"/>
+        <attribute name="timeZone" attributeType="String"/>
+        <relationship name="activityRecordSnapshots" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="ActivityRecordSnapshotMO" inverseName="chronometry" inverseEntity="ActivityRecordSnapshotMO"/>
+        <relationship name="activitySnapshots" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="ActivitySnapshotMO" inverseName="chronometry" inverseEntity="ActivitySnapshotMO"/>
+        <relationship name="activityVariationSnapshots" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="ActivityVariationSnapshotMO" inverseName="chronometry" inverseEntity="ActivityVariationSnapshotMO"/>
+        <relationship name="categorySnapshots" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="CategorySnapshotMO" inverseName="chronometry" inverseEntity="CategorySnapshotMO"/>
+    </entity>
 </model>
