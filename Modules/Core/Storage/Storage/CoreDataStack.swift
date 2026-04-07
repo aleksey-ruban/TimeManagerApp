@@ -21,7 +21,7 @@ public final class CoreDataStack: CoreDataStackProtocol, @unchecked Sendable {
         )
 
         persistentContainer.persistentStoreDescriptions = [
-            Self.makePersistentStoreDescription(from: configuration)
+            try Self.makePersistentStoreDescription(from: configuration)
         ]
 
         try Self.loadPersistentStores(for: persistentContainer)
@@ -130,7 +130,7 @@ public final class CoreDataStack: CoreDataStackProtocol, @unchecked Sendable {
 
     private static func makePersistentStoreDescription(
         from configuration: CoreDataStackConfiguration
-    ) -> NSPersistentStoreDescription {
+    ) throws -> NSPersistentStoreDescription {
         let description = NSPersistentStoreDescription()
         description.type = configuration.storeType
         description.shouldAddStoreAsynchronously = configuration.shouldAddStoreAsynchronously
@@ -139,9 +139,23 @@ public final class CoreDataStack: CoreDataStackProtocol, @unchecked Sendable {
 
         if let storeURL = configuration.storeURL {
             description.url = storeURL
+        } else if configuration.storeType == NSSQLiteStoreType {
+            description.url = try makeDefaultSQLiteStoreURL(modelName: configuration.modelName)
         }
 
         return description
+    }
+
+    private static func makeDefaultSQLiteStoreURL(modelName: String) throws -> URL {
+        let fileManager = FileManager.default
+        let directoryURL = try fileManager.url(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask,
+            appropriateFor: nil,
+            create: true
+        )
+        try fileManager.createDirectory(at: directoryURL, withIntermediateDirectories: true)
+        return directoryURL.appendingPathComponent("\(modelName).sqlite")
     }
 
     private static func loadPersistentStores(
