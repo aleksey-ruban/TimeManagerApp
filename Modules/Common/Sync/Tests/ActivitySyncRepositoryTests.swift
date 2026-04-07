@@ -8,6 +8,7 @@ final class ActivitySyncRepositoryTests: XCTestCase {
     func testApplyRemoteReplacesVariationsAndDeletesOldOnes() async throws {
         let coreDataStack = try makeInMemoryCoreDataStack()
         let repository = ActivitySyncRepository(coreDataStack: coreDataStack)
+        let preservedVariationLocalID = UUID()
 
         try await coreDataStack.performBackgroundTransaction { context in
             let category = CategoryMO(context: context)
@@ -30,14 +31,22 @@ final class ActivitySyncRepositoryTests: XCTestCase {
             activity.category = category
 
             let oldVariation = ActivityVariationMO(context: context)
-            oldVariation.localID = UUID()
-            oldVariation.remoteID = 100
-            oldVariation.value = "Old"
+            oldVariation.localID = preservedVariationLocalID
+            oldVariation.remoteID = 200
+            oldVariation.value = "Preserved"
             oldVariation.position = 0
             oldVariation.syncDeleted = false
             oldVariation.activity = activity
 
-            activity.variations = [oldVariation]
+            let duplicateVariation = ActivityVariationMO(context: context)
+            duplicateVariation.localID = UUID()
+            duplicateVariation.remoteID = 200
+            duplicateVariation.value = "Duplicate"
+            duplicateVariation.position = 1
+            duplicateVariation.syncDeleted = false
+            duplicateVariation.activity = activity
+
+            activity.variations = [oldVariation, duplicateVariation]
         }
 
         let applied = try await repository.applyRemote([
@@ -74,7 +83,7 @@ final class ActivitySyncRepositoryTests: XCTestCase {
                 activity.isDirty,
                 variations
                     .sorted { $0.position < $1.position }
-                    .map { ($0.remoteIDValue, $0.value, $0.syncDeleted) }
+                    .map { ($0.localID, $0.remoteIDValue, $0.value, $0.syncDeleted) }
             )
         }
 
@@ -83,8 +92,9 @@ final class ActivitySyncRepositoryTests: XCTestCase {
         XCTAssertEqual(stored.2, .green)
         XCTAssertFalse(stored.3)
         XCTAssertEqual(stored.4.count, 2)
-        XCTAssertEqual(stored.4.map(\.0), [200, 201])
-        XCTAssertEqual(stored.4.map(\.1), ["First", "Second"])
-        XCTAssertEqual(stored.4.map(\.2), [false, true])
+        XCTAssertEqual(stored.4.map(\.1), [200, 201])
+        XCTAssertEqual(stored.4.map(\.2), ["First", "Second"])
+        XCTAssertEqual(stored.4.map(\.3), [false, true])
+        XCTAssertEqual(stored.4.first?.0, preservedVariationLocalID)
     }
 }
