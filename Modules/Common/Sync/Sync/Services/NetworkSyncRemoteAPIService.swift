@@ -78,7 +78,8 @@ public final class NetworkSyncRemoteAPIService: SyncRemoteAPIServiceProtocol, @u
             path: configuration.pushPath,
             headers: ["Content-Type": "application/json"],
             body: .data(body, contentType: "application/json"),
-            requiresAuthorization: true
+            requiresAuthorization: true,
+            idempotency: .key(UUID().uuidString.lowercased())
         )
 
         let parser = Parser<SyncPushResponseDTO>(decoder: decoder)

@@ -38,7 +38,8 @@ final class ServerPullBatchSource: SyncPullBatchSourceProtocol, @unchecked Senda
 
         return SyncPullBatch(
             changes: changes,
-            nextCursor: response.nextCursor
+            nextCursor: response.nextCursor,
+            hasMore: response.hasMore
         )
     }
 }
