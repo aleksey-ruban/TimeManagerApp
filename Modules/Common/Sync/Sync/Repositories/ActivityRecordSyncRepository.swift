@@ -26,11 +26,7 @@ final class ActivityRecordSyncRepository: @unchecked Sendable {
             var applied = 0
 
             for remote in records {
-                let request = ActivityRecordMO.fetchRequest()
-                request.fetchLimit = 1
-                request.predicate = NSPredicate(format: "remoteID == %@", NSNumber(value: remote.id))
-
-                let existing = try context.fetch(request).first
+                let existing = try self.resolveUniqueActivityRecord(remoteID: remote.id, context: context)
                 let localVersion = existing?.lastModifiedVersionValue ?? .min
 
                 if existing != nil, remote.lastModifiedVersion <= localVersion {
@@ -101,5 +97,22 @@ final class ActivityRecordSyncRepository: @unchecked Sendable {
         request.fetchLimit = 1
         request.predicate = NSPredicate(format: "remoteID == %@", NSNumber(value: remoteID))
         return try context.fetch(request).first
+    }
+
+    private func resolveUniqueActivityRecord(
+        remoteID: Int64,
+        context: NSManagedObjectContext
+    ) throws -> ActivityRecordMO? {
+        let request = ActivityRecordMO.fetchRequest()
+        request.predicate = NSPredicate(format: "remoteID == %@", NSNumber(value: remoteID))
+
+        let matches = try context.fetch(request)
+        guard let primary = matches.first else { return nil }
+
+        for duplicate in matches.dropFirst() {
+            context.delete(duplicate)
+        }
+
+        return primary
     }
 }

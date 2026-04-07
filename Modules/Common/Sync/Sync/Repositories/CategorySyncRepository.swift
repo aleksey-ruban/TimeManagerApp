@@ -24,11 +24,7 @@ final class CategorySyncRepository: @unchecked Sendable {
             var applied = 0
 
             for remote in categories {
-                let request = CategoryMO.fetchRequest()
-                request.fetchLimit = 1
-                request.predicate = NSPredicate(format: "remoteID == %@", NSNumber(value: remote.id))
-
-                let existing = try context.fetch(request).first
+                let existing = try self.resolveUniqueCategory(remoteID: remote.id, context: context)
                 let localVersion = existing?.lastModifiedVersionValue ?? .min
 
                 if existing != nil, remote.lastModifiedVersion <= localVersion {
@@ -72,5 +68,22 @@ final class CategorySyncRepository: @unchecked Sendable {
 
             return updated
         }
+    }
+
+    private func resolveUniqueCategory(
+        remoteID: Int64,
+        context: NSManagedObjectContext
+    ) throws -> CategoryMO? {
+        let request = CategoryMO.fetchRequest()
+        request.predicate = NSPredicate(format: "remoteID == %@", NSNumber(value: remoteID))
+
+        let matches = try context.fetch(request)
+        guard let primary = matches.first else { return nil }
+
+        for duplicate in matches.dropFirst() {
+            context.delete(duplicate)
+        }
+
+        return primary
     }
 }

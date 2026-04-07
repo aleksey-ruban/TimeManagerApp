@@ -24,11 +24,7 @@ final class ChronometrySyncRepository: @unchecked Sendable {
             var applied = 0
 
             for remote in chronometries {
-                let request = ChronometryMO.fetchRequest()
-                request.fetchLimit = 1
-                request.predicate = NSPredicate(format: "remoteID == %@", NSNumber(value: remote.id))
-
-                let existing = try context.fetch(request).first
+                let existing = try self.resolveUniqueChronometry(remoteID: remote.id, context: context)
                 let localVersion = existing?.lastModifiedVersionValue ?? .min
 
                 if existing != nil, remote.lastModifiedVersion <= localVersion {
@@ -176,5 +172,22 @@ final class ChronometrySyncRepository: @unchecked Sendable {
         (chronometry.activityVariationSnapshots ?? []).forEach(context.delete)
         (chronometry.activitySnapshots ?? []).forEach(context.delete)
         (chronometry.categorySnapshots ?? []).forEach(context.delete)
+    }
+
+    private func resolveUniqueChronometry(
+        remoteID: Int64,
+        context: NSManagedObjectContext
+    ) throws -> ChronometryMO? {
+        let request = ChronometryMO.fetchRequest()
+        request.predicate = NSPredicate(format: "remoteID == %@", NSNumber(value: remoteID))
+
+        let matches = try context.fetch(request)
+        guard let primary = matches.first else { return nil }
+
+        for duplicate in matches.dropFirst() {
+            context.delete(duplicate)
+        }
+
+        return primary
     }
 }

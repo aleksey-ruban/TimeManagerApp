@@ -26,11 +26,7 @@ final class ActivitySyncRepository: @unchecked Sendable {
             var applied = 0
 
             for remote in activities {
-                let request = ActivityMO.fetchRequest()
-                request.fetchLimit = 1
-                request.predicate = NSPredicate(format: "remoteID == %@", NSNumber(value: remote.id))
-
-                let existing = try context.fetch(request).first
+                let existing = try self.resolveUniqueActivity(remoteID: remote.id, context: context)
                 let localVersion = existing?.lastModifiedVersionValue ?? .min
 
                 if existing != nil, remote.lastModifiedVersion <= localVersion {
@@ -101,19 +97,78 @@ final class ActivitySyncRepository: @unchecked Sendable {
         context: NSManagedObjectContext
     ) {
         let current = activity.variations ?? []
+        var existingByRemoteID: [Int64: ActivityVariationMO] = [:]
+        var localOnlyVariations: [ActivityVariationMO] = []
+
         for variation in current {
-            context.delete(variation)
+            if let remoteID = variation.remoteIDValue {
+                if let primary = existingByRemoteID[remoteID] {
+                    reattachRecords(from: variation, to: primary)
+                    context.delete(variation)
+                } else {
+                    existingByRemoteID[remoteID] = variation
+                }
+            } else {
+                localOnlyVariations.append(variation)
+            }
         }
 
-        activity.variations = Set(remoteVariations.map { remote in
-            let variation = ActivityVariationMO(context: context)
-            variation.localID = UUID()
+        var updatedVariations: [ActivityVariationMO] = []
+        var reusedLocalOnlyIndices = Set<Int>()
+
+        for remote in remoteVariations {
+            let variation: ActivityVariationMO
+
+            if let remoteID = remote.id, let existing = existingByRemoteID.removeValue(forKey: remoteID) {
+                variation = existing
+            } else if let fallbackIndex = localOnlyVariations.indices.first(where: { reusedLocalOnlyIndices.contains($0) == false }) {
+                variation = localOnlyVariations[fallbackIndex]
+                reusedLocalOnlyIndices.insert(fallbackIndex)
+            } else {
+                variation = ActivityVariationMO(context: context)
+                variation.localID = UUID()
+            }
+
             variation.remoteID = remote.id.map(NSNumber.init(value:))
             variation.value = remote.value
             variation.position = Int64(remote.position)
             variation.syncDeleted = remote.deleted
             variation.activity = activity
-            return variation
-        })
+            updatedVariations.append(variation)
+        }
+
+        for stale in existingByRemoteID.values {
+            context.delete(stale)
+        }
+
+        for (index, localOnlyVariation) in localOnlyVariations.enumerated() where reusedLocalOnlyIndices.contains(index) == false {
+            context.delete(localOnlyVariation)
+        }
+
+        activity.variations = Set(updatedVariations)
+    }
+
+    private func resolveUniqueActivity(
+        remoteID: Int64,
+        context: NSManagedObjectContext
+    ) throws -> ActivityMO? {
+        let request = ActivityMO.fetchRequest()
+        request.predicate = NSPredicate(format: "remoteID == %@", NSNumber(value: remoteID))
+
+        let matches = try context.fetch(request)
+        guard let primary = matches.first else { return nil }
+
+        for duplicate in matches.dropFirst() {
+            context.delete(duplicate)
+        }
+
+        return primary
+    }
+
+    private func reattachRecords(
+        from duplicate: ActivityVariationMO,
+        to primary: ActivityVariationMO
+    ) {
+        (duplicate.records ?? []).forEach { $0.variation = primary }
     }
 }
