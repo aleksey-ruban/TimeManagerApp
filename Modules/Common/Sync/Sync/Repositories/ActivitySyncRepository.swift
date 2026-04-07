@@ -72,6 +72,7 @@ final class ActivitySyncRepository: @unchecked Sendable {
                 guard let object = try context.fetch(request).first else { continue }
 
                 object.remoteID = ack.remoteID.map(NSNumber.init(value:))
+                object.lastModifiedVersion = ack.lastModifiedVersion.map(NSNumber.init(value:))
                 object.isDirty = false
                 updated += 1
             }

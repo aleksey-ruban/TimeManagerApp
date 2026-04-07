@@ -32,7 +32,11 @@ final class ChronometriesPushStage: SyncPushStageProtocol, @unchecked Sendable {
             guard result.status?.uppercased() != "ERROR" else {
                 throw CommonSyncError.pushRejected(stage: id.rawValue, localID: result.localId, status: result.status)
             }
-            return ChronometryPushAcknowledgement(localID: result.localId, remoteID: result.serverId)
+            return ChronometryPushAcknowledgement(
+                localID: result.localId,
+                remoteID: result.serverId,
+                lastModifiedVersion: result.lastModifiedVersion
+            )
         }
 
         return try await repository.acknowledgePush(acknowledgements)

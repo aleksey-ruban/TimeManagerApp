@@ -32,7 +32,11 @@ final class ActivitiesPushStage: SyncPushStageProtocol, @unchecked Sendable {
             guard result.status?.uppercased() != "ERROR" else {
                 throw CommonSyncError.pushRejected(stage: id.rawValue, localID: result.localId, status: result.status)
             }
-            return ActivityPushAcknowledgement(localID: result.localId, remoteID: result.serverId)
+            return ActivityPushAcknowledgement(
+                localID: result.localId,
+                remoteID: result.serverId,
+                lastModifiedVersion: result.lastModifiedVersion
+            )
         }
 
         return try await repository.acknowledgePush(acknowledgements)

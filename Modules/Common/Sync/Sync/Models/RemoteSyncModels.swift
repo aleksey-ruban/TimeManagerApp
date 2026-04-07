@@ -210,6 +210,7 @@ public struct SyncPushResultDTO: Decodable, Sendable, Hashable {
     public let operation: SyncOperationDTO
     public let localId: UUID
     public let serverId: Int64?
+    public let lastModifiedVersion: Int64?
     public let status: String?
 }
 

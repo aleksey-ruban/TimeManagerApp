@@ -29,6 +29,7 @@ final class CategoriesPushStageTests: XCTestCase {
                         operation: .create,
                         localId: localID,
                         serverId: 5,
+                        lastModifiedVersion: 12,
                         status: "OK"
                     )
                 ]
@@ -47,11 +48,12 @@ final class CategoriesPushStageTests: XCTestCase {
             request.fetchLimit = 1
             request.predicate = NSPredicate(format: "localID == %@", localID as CVarArg)
             let object = try XCTUnwrap(context.fetch(request).first)
-            return (object.remoteIDValue, object.isDirty)
+            return (object.remoteIDValue, object.lastModifiedVersionValue, object.isDirty)
         }
 
         XCTAssertEqual(stored.0, 5)
-        XCTAssertFalse(stored.1)
+        XCTAssertEqual(stored.1, 12)
+        XCTAssertFalse(stored.2)
     }
 
     func testExecuteThrowsWhenServerReturnsDifferentResultCount() async throws {
@@ -77,6 +79,7 @@ final class CategoriesPushStageTests: XCTestCase {
                         operation: .create,
                         localId: categories[0].localID,
                         serverId: 5,
+                        lastModifiedVersion: 12,
                         status: "OK"
                     )
                 ]

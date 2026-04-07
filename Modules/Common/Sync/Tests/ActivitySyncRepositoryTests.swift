@@ -5,6 +5,64 @@ import XCTest
 @testable import CommonSync
 
 final class ActivitySyncRepositoryTests: XCTestCase {
+    func testApplyRemotePreservesDirtyDeletedActivityAndHydratesServerVersion() async throws {
+        let coreDataStack = try makeInMemoryCoreDataStack()
+        let repository = ActivitySyncRepository(coreDataStack: coreDataStack)
+        let localID = UUID()
+
+        try await coreDataStack.performBackgroundTransaction { context in
+            let activity = ActivityMO(context: context)
+            activity.localID = localID
+            activity.remoteID = 10
+            activity.lastModifiedVersion = nil
+            activity.name = "Local Activity"
+            activity.iconName = "figure.run"
+            activity.colorRawValue = ActivityColor.teal.rawValue
+            activity.isDirty = true
+            activity.syncDeleted = true
+        }
+
+        let applied = try await repository.applyRemote([
+            RemoteActivityDTO(
+                id: 10,
+                lastModifiedVersion: 14,
+                name: "Server Activity",
+                categoryId: nil,
+                icon: "figure.run",
+                iconColor: "TEAL",
+                variations: [],
+                deleted: false
+            )
+        ])
+
+        XCTAssertEqual(applied, 1)
+
+        let stored = try await coreDataStack.performBackgroundTask { context in
+            let request = ActivityMO.fetchRequest()
+            request.fetchLimit = 1
+            request.predicate = NSPredicate(format: "localID == %@", localID as CVarArg)
+
+            let activity = try XCTUnwrap(context.fetch(request).first)
+            return (
+                activity.remoteIDValue,
+                activity.lastModifiedVersionValue,
+                activity.isDirty,
+                activity.syncDeleted
+            )
+        }
+
+        XCTAssertEqual(stored.0, 10)
+        XCTAssertEqual(stored.1, 14)
+        XCTAssertTrue(stored.2)
+        XCTAssertTrue(stored.3)
+
+        let dirty = try await repository.fetchDirty()
+        XCTAssertEqual(dirty.count, 1)
+        XCTAssertEqual(dirty.first?.remoteID, 10)
+        XCTAssertEqual(dirty.first?.lastModifiedVersion, 14)
+        XCTAssertTrue(dirty.first?.isDeleted == true)
+    }
+
     func testApplyRemoteReplacesVariationsAndDeletesOldOnes() async throws {
         let coreDataStack = try makeInMemoryCoreDataStack()
         let repository = ActivitySyncRepository(coreDataStack: coreDataStack)
