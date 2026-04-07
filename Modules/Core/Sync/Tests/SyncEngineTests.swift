@@ -16,14 +16,16 @@ final class SyncEngineTests: XCTestCase {
                         SyncPullChange(stageID: "categories", payload: "c1"),
                         SyncPullChange(stageID: "tasks", payload: "t1"),
                     ],
-                    nextCursor: "cursor-1"
+                    nextCursor: "cursor-1",
+                    hasMore: true
                 ),
                 SyncPullBatch(
                     changes: [
                         SyncPullChange(stageID: "categories", payload: "c2"),
                         SyncPullChange(stageID: "taskRecords", payload: "r1"),
                     ],
-                    nextCursor: "cursor-2"
+                    nextCursor: nil,
+                    hasMore: false
                 ),
             ]
         )
@@ -64,8 +66,41 @@ final class SyncEngineTests: XCTestCase {
         XCTAssertEqual(result.stageResults.map(\.processedItemsCount), [2, 1, 1, 1, 2])
 
         let requestedCursors = await source.cursors()
-        XCTAssertEqual(requestedCursors, ["cursor-0", "cursor-1", "cursor-2"])
-        XCTAssertEqual(result.pullCursor, "cursor-2")
+        XCTAssertEqual(requestedCursors, ["cursor-0", "cursor-1"])
+        XCTAssertNil(result.pullCursor)
+    }
+
+    func testRunStopsAfterProcessingFinalNonEmptyPullBatch() async throws {
+        let engine = SyncAssembly(
+            reachabilityMonitor: ReachabilityMonitorMock(isReachable: true)
+        ).makeEngine()
+        let source = PullBatchSourceStub(
+            batches: [
+                SyncPullBatch(
+                    changes: [SyncPullChange(stageID: "categories", payload: "c1")],
+                    nextCursor: nil,
+                    hasMore: false
+                )
+            ]
+        )
+
+        let pipeline = SyncPipeline(
+            pull: SyncPullConfiguration(
+                initialCursor: nil,
+                source: source,
+                stages: [
+                    PullStageSpy(id: "categories", recorder: StageRecorder(), payloadExtractor: Self.stringPayloads),
+                ]
+            ),
+            pushStages: []
+        )
+
+        let result = try await engine.run(trigger: .manual, pipeline: pipeline)
+
+        let requestedCursors = await source.cursors()
+        XCTAssertEqual(requestedCursors, [nil])
+        XCTAssertEqual(result.stageResults.first?.processedItemsCount, 1)
+        XCTAssertNil(result.pullCursor)
     }
 
     func testEachPushStageOwnsItsDirtySelectionWithoutGlobalScanner() async throws {

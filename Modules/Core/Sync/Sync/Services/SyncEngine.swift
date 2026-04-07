@@ -79,6 +79,10 @@ actor SyncEngine: SyncEngineProtocol {
                 bufferedChanges[change.stageID, default: []].append(change)
             }
             cursor = batch.nextCursor
+
+            if batch.hasMore == false {
+                break
+            }
         }
 
         var results: [SyncStageResult] = []
