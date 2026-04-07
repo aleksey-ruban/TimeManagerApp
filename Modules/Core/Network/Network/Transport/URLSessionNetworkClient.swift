@@ -39,6 +39,8 @@ final class URLSessionNetworkClient: NetworkClientProtocol {
                 throw NetworkError.invalidResponse
             }
 
+            logger.logResponse(data: data, response: httpResponse, for: urlRequest)
+
             guard (200 ... 299).contains(httpResponse.statusCode) else {
                 throw NetworkError.httpStatusCode(httpResponse.statusCode, data)
             }

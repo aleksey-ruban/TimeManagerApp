@@ -100,9 +100,14 @@ final class URLSessionStub: URLSessionProtocol, @unchecked Sendable {
 
 final class NetworkLoggerSpy: NetworkLogging, @unchecked Sendable {
     private(set) var loggedRequests: [URLRequest] = []
+    private(set) var loggedResponses: [(request: URLRequest, response: HTTPURLResponse, data: Data)] = []
 
     func logRequest(_ request: URLRequest) {
         loggedRequests.append(request)
+    }
+
+    func logResponse(data: Data, response: HTTPURLResponse, for request: URLRequest) {
+        loggedResponses.append((request: request, response: response, data: data))
     }
 }
 

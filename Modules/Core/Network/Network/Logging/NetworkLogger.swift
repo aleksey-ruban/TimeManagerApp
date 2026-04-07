@@ -36,6 +36,7 @@ public struct NetworkLoggingConfiguration: Sendable, Equatable {
 
 protocol NetworkLogging: Sendable {
     func logRequest(_ request: URLRequest)
+    func logResponse(data: Data, response: HTTPURLResponse, for request: URLRequest)
 }
 
 protocol NetworkLogWriting: Sendable {
@@ -59,10 +60,18 @@ struct NetworkLogger: NetworkLogging {
             return
         }
 
-        writer.write(format(request))
+        writer.write(format(request: request))
     }
 
-    private func format(_ request: URLRequest) -> String {
+    func logResponse(data: Data, response: HTTPURLResponse, for request: URLRequest) {
+        guard configuration.isEnabled else {
+            return
+        }
+
+        writer.write(format(response: response, data: data, for: request))
+    }
+
+    private func format(request: URLRequest) -> String {
         let url = request.url
         let components = url.flatMap { URLComponents(url: $0, resolvingAgainstBaseURL: false) }
         let path = url?.path.isEmpty == false ? url?.path ?? "-" : "/"
@@ -78,6 +87,25 @@ struct NetworkLogger: NetworkLogging {
         Parameters: \(parameters)
         Headers: \(headers)
         Cookies: \(cookies)
+        Body: \(body)
+        """
+    }
+
+    private func format(response: HTTPURLResponse, data: Data, for request: URLRequest) -> String {
+        let url = request.url
+        let path = url?.path.isEmpty == false ? url?.path ?? "-" : "/"
+        let method = request.httpMethod ?? "UNKNOWN"
+        let headers = formatHeaders(response.allHeaderFields.reduce(into: [String: String]()) { partialResult, item in
+            guard let key = item.key as? String else { return }
+            partialResult[key] = "\(item.value)"
+        })
+        let body = formatBody(data)
+
+        return """
+        [Network Response] \(method) \(path)
+        URL: \(url?.absoluteString ?? "-")
+        Status: \(response.statusCode)
+        Headers: \(headers)
         Body: \(body)
         """
     }
