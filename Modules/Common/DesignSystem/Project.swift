@@ -37,14 +37,7 @@ let project = Project(
             deploymentTargets: ModuleConfig.deploymentTarget,
             infoPlist: .default,
             sources: [
-                "DesignSystem/Components/Button/PrimaryButton.swift",
-                "DesignSystem/Components/Button/PrimaryButtonConfiguration.swift",
-                "DesignSystem/Components/Button/LinkButton.swift",
-                "DesignSystem/Components/Button/LinkButtonConfiguration.swift",
-                "DesignSystem/Components/Container/FloatingBottomContainer.swift",
-                "DesignSystem/Components/Container/FloatingBottomContainerConfiguration.swift",
-                "DesignSystem/Components/TextField/CommonTextField.swift",
-                "DesignSystem/Components/TextField/CommonTextFieldConfiguration.swift",
+                "DesignSystem/Components/**/*Component.swift",
             ],
             dependencies: [
                 .project(target: "DesignTokens", path: "../DesignTokens"),
