@@ -40,12 +40,18 @@ public final class AppSyncService: AppSyncServiceProtocol, @unchecked Sendable {
             pushStages: pushStages
         )
 
-        let result = try await engine.run(
-            trigger: trigger,
-            pipeline: pipeline
-        )
+        do {
+            let result = try await engine.run(
+                trigger: trigger,
+                pipeline: pipeline
+            )
 
-        await userProfileService.updateSnapshotVersion(pullSource.maxSnapshotVersion)
-        return result
+            await userProfileService.updateSnapshotVersion(pullSource.maxSnapshotVersion)
+            NotificationCenter.default.post(name: .appSyncServiceDidFinishRun, object: nil)
+            return result
+        } catch {
+            NotificationCenter.default.post(name: .appSyncServiceDidFinishRun, object: nil)
+            throw error
+        }
     }
 }
