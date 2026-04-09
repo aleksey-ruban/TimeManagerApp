@@ -2,7 +2,7 @@ import UIKit
 import DesignSystem
 
 @MainActor
-final class AuthRegistrationViewController: UIViewController, AuthRegistrationView {
+final class AuthRegistrationViewController: BaseViewController, AuthRegistrationView {
     private let presenter: AuthRegistrationPresenting
     private let email: String
     private let screenView = AuthScreenScaffoldView(

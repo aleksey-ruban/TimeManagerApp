@@ -2,7 +2,7 @@ import UIKit
 import DesignSystem
 
 @MainActor
-final class AuthLoginPasswordViewController: UIViewController, AuthLoginPasswordView {
+final class AuthLoginPasswordViewController: BaseViewController, AuthLoginPasswordView {
     private let presenter: AuthLoginPasswordPresenting
     private let email: String
     private let screenView = AuthScreenScaffoldView(

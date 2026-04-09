@@ -2,7 +2,7 @@ import UIKit
 import DesignSystem
 
 @MainActor
-final class AuthEmailEntryViewController: UIViewController, AuthEmailEntryView {
+final class AuthEmailEntryViewController: BaseViewController, AuthEmailEntryView {
     private let presenter: AuthEmailEntryPresenting
     private let screenView = AuthScreenScaffoldView(
         title: "Введите адрес электронной почты",

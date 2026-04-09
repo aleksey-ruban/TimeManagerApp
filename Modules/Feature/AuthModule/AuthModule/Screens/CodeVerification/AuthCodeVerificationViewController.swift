@@ -2,7 +2,7 @@ import UIKit
 import DesignSystem
 
 @MainActor
-final class AuthCodeVerificationViewController: UIViewController, AuthCodeVerificationView {
+final class AuthCodeVerificationViewController: BaseViewController, AuthCodeVerificationView {
     private let presenter: AuthCodeVerificationPresenting
     private let screenView: AuthScreenScaffoldView
     private let codeField = CommonTextField(
