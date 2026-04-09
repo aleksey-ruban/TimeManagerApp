@@ -32,6 +32,12 @@ public enum DesignTypography {
         kerning: 0
     )
     
+    public static let bodyRegular16 = Style(
+        font: .systemFont(ofSize: 16, weight: .regular),
+        lineHeight: 17,
+        kerning: 0
+    )
+    
     public static let bodyRegular17 = Style(
         font: .systemFont(ofSize: 17, weight: .regular),
         lineHeight: 22,
