@@ -37,7 +37,7 @@ final class ActivitiesCoordinator: ActivitiesCoordinatorProtocol {
         )
         let viewController = ActivityListViewController(presenter: presenter)
         presenter.view = viewController
-        navigationController.pushViewController(viewController, animated: true)
+        push(viewController, animated: true)
     }
 
     func showActivityOverview() {
@@ -56,7 +56,7 @@ final class ActivitiesCoordinator: ActivitiesCoordinatorProtocol {
             calendarAssembly: calendarAssembly
         )
         presenter.view = viewController
-        navigationController.pushViewController(viewController, animated: true)
+        push(viewController, animated: true)
     }
 
     func showActivityLauncher() {
@@ -70,7 +70,7 @@ final class ActivitiesCoordinator: ActivitiesCoordinatorProtocol {
         )
         let viewController = ActivityLauncherViewController(presenter: presenter)
         presenter.view = viewController
-        navigationController.pushViewController(viewController, animated: true)
+        push(viewController, animated: true)
     }
 
     func showActivityEditor(activityID: UUID?) {
@@ -96,7 +96,7 @@ final class ActivitiesCoordinator: ActivitiesCoordinatorProtocol {
         )
         let viewController = ActivityEditorViewController(presenter: presenter)
         presenter.view = viewController
-        navigationController.pushViewController(viewController, animated: true)
+        push(viewController, animated: true)
     }
 
     func showActivityRecordCreation() {
@@ -113,7 +113,7 @@ final class ActivitiesCoordinator: ActivitiesCoordinatorProtocol {
         )
         let viewController = ActivityRecordPickerViewController(presenter: presenter)
         presenter.view = viewController
-        navigationController.pushViewController(viewController, animated: true)
+        push(viewController, animated: true)
     }
 
     func showActivityRecordEditor(activityRecordID: UUID) {
@@ -145,7 +145,7 @@ private extension ActivitiesCoordinator {
         )
         let viewController = ActivityRecordEditorViewController(presenter: presenter)
         presenter.view = viewController
-        navigationController.pushViewController(viewController, animated: true)
+        push(viewController, animated: true)
     }
 
     func showIconPicker(
@@ -154,6 +154,7 @@ private extension ActivitiesCoordinator {
         onApply: @escaping @MainActor (String, ActivityColor) -> Void
     ) {
         let presenter = ActivityIconPickerPresenter(
+            iconCatalogService: ActivityIconCatalogService(),
             selectedIconName: selectedIconName,
             selectedColor: selectedColor,
             onApply: { [weak self] iconName, color in
@@ -187,6 +188,11 @@ private extension ActivitiesCoordinator {
         )
         let viewController = CategoryPickerViewController(presenter: presenter)
         presenter.view = viewController
-        navigationController.pushViewController(viewController, animated: true)
+        push(viewController, animated: true)
+    }
+
+    func push(_ viewController: UIViewController, animated: Bool) {
+        viewController.hidesBottomBarWhenPushed = navigationController.viewControllers.isEmpty == false
+        navigationController.pushViewController(viewController, animated: animated)
     }
 }

@@ -9,31 +9,19 @@ protocol ActivityIconPickerView: AnyObject {
 final class ActivityIconPickerPresenter {
     weak var view: ActivityIconPickerView?
 
+    private let iconCatalogService: ActivityIconCatalogServiceProtocol
     private let onApply: (String, ActivityColor) -> Void
 
     private var selectedIconName: String
     private var selectedColor: ActivityColor
 
-    private let icons = [
-        "bolt.fill",
-        "briefcase.fill",
-        "book.fill",
-        "leaf.fill",
-        "figure.run",
-        "heart.fill",
-        "brain.head.profile",
-        "pencil.and.outline",
-        "hammer.fill",
-        "timer",
-        "fork.knife",
-        "moon.fill",
-    ]
-
     init(
+        iconCatalogService: ActivityIconCatalogServiceProtocol,
         selectedIconName: String,
         selectedColor: ActivityColor,
         onApply: @escaping (String, ActivityColor) -> Void
     ) {
+        self.iconCatalogService = iconCatalogService
         self.selectedIconName = selectedIconName
         self.selectedColor = selectedColor
         self.onApply = onApply
@@ -65,7 +53,7 @@ private extension ActivityIconPickerPresenter {
                 selectedIconName: selectedIconName,
                 selectedColor: selectedColor,
                 availableColors: ActivityColor.allCases,
-                availableIcons: icons
+                availableIcons: iconCatalogService.availableIcons()
             )
         )
     }

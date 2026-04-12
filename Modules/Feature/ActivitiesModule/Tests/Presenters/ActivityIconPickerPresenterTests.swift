@@ -6,6 +6,7 @@ import Domain
 final class ActivityIconPickerPresenterTests: XCTestCase {
     func testViewDidLoadRendersInitialSelection() {
         let presenter = ActivityIconPickerPresenter(
+            iconCatalogService: ActivityIconCatalogServiceStub(),
             selectedIconName: "book.fill",
             selectedColor: .blue,
             onApply: { _, _ in }
@@ -17,11 +18,12 @@ final class ActivityIconPickerPresenterTests: XCTestCase {
 
         XCTAssertEqual(view.lastViewModel?.selectedIconName, "book.fill")
         XCTAssertEqual(view.lastViewModel?.selectedColor, .blue)
-        XCTAssertTrue(view.lastViewModel?.availableIcons.contains("timer") == true)
+        XCTAssertEqual(view.lastViewModel?.availableIcons, ActivityIconCatalogServiceStub.icons)
     }
 
     func testSelectingColorAndIconUpdatesViewModel() {
         let presenter = ActivityIconPickerPresenter(
+            iconCatalogService: ActivityIconCatalogServiceStub(),
             selectedIconName: "book.fill",
             selectedColor: .blue,
             onApply: { _, _ in }
@@ -31,16 +33,17 @@ final class ActivityIconPickerPresenterTests: XCTestCase {
 
         presenter.viewDidLoad()
         presenter.didSelectColor(.green)
-        presenter.didSelectIcon("timer")
+        presenter.didSelectIcon("figure.run")
 
         XCTAssertEqual(view.lastViewModel?.selectedColor, .green)
-        XCTAssertEqual(view.lastViewModel?.selectedIconName, "timer")
+        XCTAssertEqual(view.lastViewModel?.selectedIconName, "figure.run")
     }
 
     func testApplyReturnsCurrentSelection() {
         var appliedIcon: String?
         var appliedColor: ActivityColor?
         let presenter = ActivityIconPickerPresenter(
+            iconCatalogService: ActivityIconCatalogServiceStub(),
             selectedIconName: "book.fill",
             selectedColor: .blue,
             onApply: {
@@ -50,11 +53,19 @@ final class ActivityIconPickerPresenterTests: XCTestCase {
         )
 
         presenter.didSelectColor(.teal)
-        presenter.didSelectIcon("moon.fill")
+        presenter.didSelectIcon("figure.run")
         presenter.didTapApply()
 
-        XCTAssertEqual(appliedIcon, "moon.fill")
+        XCTAssertEqual(appliedIcon, "figure.run")
         XCTAssertEqual(appliedColor, .teal)
+    }
+}
+
+private struct ActivityIconCatalogServiceStub: ActivityIconCatalogServiceProtocol {
+    static let icons = ["book.fill", "figure.run", "house.fill"]
+
+    func availableIcons() -> [String] {
+        Self.icons
     }
 }
 
