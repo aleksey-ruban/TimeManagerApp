@@ -42,7 +42,7 @@ final class RetryingNetworkClient: NetworkClientProtocol {
                     canRetryRequest: canRetryRequest,
                     attempt: attempt
                 ) else {
-                    throw error
+                    throw mappedError
                 }
 
                 attempt += 1

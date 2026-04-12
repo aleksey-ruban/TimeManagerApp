@@ -77,4 +77,47 @@ final class RetryingNetworkClientTests: XCTestCase {
 
         XCTAssertEqual(nextClient.executionCount, 2)
     }
+
+    func testRetryingNetworkClientMapsRawOfflineURLErrorWhenRetriesAreExhausted() async {
+        let nextClient = RawErrorFlakyNetworkClient(
+            results: Array(
+                repeating: .failure(URLError(.notConnectedToInternet)),
+                count: 4
+            )
+        )
+        let client = RetryingNetworkClient(
+            nextClient: nextClient,
+            retryDelayStrategy: ImmediateRetryDelayStrategy()
+        )
+        let request = NetworkRequest(
+            method: .get,
+            baseURL: URL(string: "https://example.com")!,
+            path: "status",
+            retryPolicy: .safeMethods
+        )
+
+        do {
+            _ = try await client.execute(request)
+            XCTFail("Expected request to fail")
+        } catch let error as NetworkError {
+            XCTAssertEqual(
+                error,
+                .transportError(URLError(.notConnectedToInternet).localizedDescription, isRetryable: true)
+            )
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+    }
+}
+
+private final class RawErrorFlakyNetworkClient: NetworkClientProtocol, @unchecked Sendable {
+    private var results: [Result<NetworkResponse, Error>]
+
+    init(results: [Result<NetworkResponse, Error>]) {
+        self.results = results
+    }
+
+    func execute(_ request: NetworkRequest) async throws -> NetworkResponse {
+        try results.removeFirst().get()
+    }
 }
