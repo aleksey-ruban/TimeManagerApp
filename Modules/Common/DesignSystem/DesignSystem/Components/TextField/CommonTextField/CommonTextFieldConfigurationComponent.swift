@@ -64,6 +64,7 @@ public struct CommonTextFieldConfiguration {
     public var errorText: String?
     public var isEnabled: Bool
     public var showsClearButton: Bool
+    public var showsDoneAccessory: Bool
     public var appearance: Appearance
 
     public init(
@@ -73,6 +74,7 @@ public struct CommonTextFieldConfiguration {
         errorText: String? = nil,
         isEnabled: Bool = true,
         showsClearButton: Bool = true,
+        showsDoneAccessory: Bool = true,
         appearance: Appearance = .init()
     ) {
         self.hint = hint
@@ -81,6 +83,7 @@ public struct CommonTextFieldConfiguration {
         self.errorText = errorText
         self.isEnabled = isEnabled
         self.showsClearButton = showsClearButton
+        self.showsDoneAccessory = showsDoneAccessory
         self.appearance = appearance
     }
 }

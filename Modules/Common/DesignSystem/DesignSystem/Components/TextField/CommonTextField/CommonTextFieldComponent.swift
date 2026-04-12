@@ -209,23 +209,22 @@ private extension CommonTextField {
         switch kind {
         case .plain:
             textField.autocapitalizationType = .sentences
-            textField.inputAccessoryView = makeDoneToolbar()
         case .email:
             textField.keyboardType = .emailAddress
             textField.textContentType = .emailAddress
             textField.autocapitalizationType = .none
-            textField.inputAccessoryView = makeDoneToolbar()
         case .phone:
             textField.keyboardType = .phonePad
             textField.textContentType = .telephoneNumber
-            textField.inputAccessoryView = makeDoneToolbar()
         case .numericCode:
             textField.keyboardType = .numberPad
             textField.textContentType = .oneTimeCode
-            textField.inputAccessoryView = makeDoneToolbar()
         case .password:
             textField.isSecureTextEntry = true
             textField.textContentType = .password
+        }
+
+        if configuration.showsDoneAccessory {
             textField.inputAccessoryView = makeDoneToolbar()
         }
     }
