@@ -1,11 +1,11 @@
 import CoreNetwork
 import Foundation
 
-public protocol CommonUserProfileAssemblyProtocol {
+public protocol CoreUserProfileAssemblyProtocol {
     func makeService() -> UserProfileServiceProtocol
 }
 
-public struct CommonUserProfileAssembly: CommonUserProfileAssemblyProtocol, @unchecked Sendable {
+public struct CoreUserProfileAssembly: CoreUserProfileAssemblyProtocol, @unchecked Sendable {
     private let networkExecutorFactory: NetworkExecutorFactoryProtocol
     private let configuration: UserProfileAPIConfiguration
     private let defaults: UserDefaults

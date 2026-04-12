@@ -1,5 +1,5 @@
 import CoreSync
-import CommonUserProfile
+import CoreUserProfile
 import Foundation
 
 final class ChronometriesPushStage: SyncPushStageProtocol, @unchecked Sendable {

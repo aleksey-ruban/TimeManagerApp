@@ -41,10 +41,11 @@ let project = Project(
             ],
             dependencies: [
                 .project(target: "Domain", path: "../Domain"),
-                .project(target: "CommonUserProfile", path: "../UserProfile"),
+                .project(target: "CoreUserProfile", path: "../../Core/UserProfile"),
                 .project(target: "CoreSync", path: "../../Core/Sync"),
                 .project(target: "CoreStorage", path: "../../Core/Storage"),
                 .project(target: "CoreNetwork", path: "../../Core/Network"),
+                .project(target: "CoreAuth", path: "../../Core/Auth"),
             ],
             settings: .settings(base: moduleSettings)
         ),
@@ -61,10 +62,11 @@ let project = Project(
             dependencies: [
                 .target(name: ModuleConfig.name),
                 .project(target: "Domain", path: "../Domain"),
-                .project(target: "CommonUserProfile", path: "../UserProfile"),
+                .project(target: "CoreUserProfile", path: "../../Core/UserProfile"),
                 .project(target: "CoreSync", path: "../../Core/Sync"),
                 .project(target: "CoreStorage", path: "../../Core/Storage"),
                 .project(target: "CoreNetwork", path: "../../Core/Network"),
+                .project(target: "CoreAuth", path: "../../Core/Auth"),
             ],
             settings: .settings(base: moduleSettings.merging([
                 "SWIFT_EMIT_LOC_STRINGS": "NO",

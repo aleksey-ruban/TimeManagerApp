@@ -1,8 +1,8 @@
 import ProjectDescription
 
 private enum ModuleConfig {
-    static let name = "CommonUserProfile"
-    static let bundleId = "com.alekseyruban.TimeManagerApp.CommonUserProfile"
+    static let name = "CoreUserProfile"
+    static let bundleId = "com.alekseyruban.TimeManagerApp.CoreUserProfile"
     static let deploymentTarget: DeploymentTargets = .multiplatform(
         iOS: "16.0",
         macOS: "13.0"
@@ -40,8 +40,10 @@ let project = Project(
                 "UserProfile/**/*.swift",
             ],
             dependencies: [
-                .project(target: "Domain", path: "../Domain"),
-                .project(target: "CoreNetwork", path: "../../Core/Network"),
+                .project(target: "Domain", path: "../../Common/Domain"),
+                .project(target: "CoreNetwork", path: "../Network"),
+                .project(target: "CoreAuth", path: "../Auth"),
+                .project(target: "CoreSessionCleanup", path: "../SessionCleanup"),
             ],
             settings: .settings(base: moduleSettings)
         ),
@@ -57,8 +59,10 @@ let project = Project(
             ],
             dependencies: [
                 .target(name: ModuleConfig.name),
-                .project(target: "Domain", path: "../Domain"),
-                .project(target: "CoreNetwork", path: "../../Core/Network"),
+                .project(target: "Domain", path: "../../Common/Domain"),
+                .project(target: "CoreNetwork", path: "../Network"),
+                .project(target: "CoreAuth", path: "../Auth"),
+                .project(target: "CoreSessionCleanup", path: "../SessionCleanup"),
             ],
             settings: .settings(base: moduleSettings.merging([
                 "SWIFT_EMIT_LOC_STRINGS": "NO",

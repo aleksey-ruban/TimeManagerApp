@@ -1,6 +1,7 @@
-import CommonUserProfile
+import CoreAuth
 import CoreStorage
 import CoreSync
+import CoreUserProfile
 import Domain
 import Foundation
 import XCTest
@@ -71,9 +72,19 @@ private actor UserProfileServiceStub: UserProfileServiceProtocol {
         User(firstName: nil, email: nil, snapshotVersion: snapshotVersion)
     }
 
+    func updateProfile(name: String) async throws -> User {
+        User(firstName: name, email: nil, snapshotVersion: snapshotVersion)
+    }
+
+    func deleteUser() async throws {}
+
     func fetchSessions() async throws -> UserSessions {
         UserSessions(currentSessionID: 0, sessions: [])
     }
+
+    func logoutDevice(sessionID: Int64) async throws {}
+
+    func logoutOtherDevices() async throws {}
 
     func currentSnapshotVersion() async -> SnapshotVersion {
         snapshotVersion

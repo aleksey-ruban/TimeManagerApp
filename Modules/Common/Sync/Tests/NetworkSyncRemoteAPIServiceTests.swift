@@ -143,6 +143,11 @@ final class NetworkSyncRemoteAPIServiceTests: XCTestCase {
 private actor NetworkExecutorSpy: INetworkExecutor {
     private(set) var lastRequest: NetworkRequest?
 
+    func execute(_ request: NetworkRequest) async throws -> NetworkResponse {
+        lastRequest = request
+        return NetworkResponse(data: Data(#"{"results":[]}"#.utf8), response: httpResponse(statusCode: 200))
+    }
+
     func execute<Output>(
         _ request: NetworkRequest,
         parser: Parser<Output>
@@ -159,4 +164,13 @@ private struct NetworkExecutorFactorySpy: NetworkExecutorFactoryProtocol {
     func makeExecutor() -> INetworkExecutor {
         executor
     }
+}
+
+private func httpResponse(statusCode: Int) -> HTTPURLResponse {
+    HTTPURLResponse(
+        url: URL(string: "https://example.com")!,
+        statusCode: statusCode,
+        httpVersion: nil,
+        headerFields: nil
+    )!
 }

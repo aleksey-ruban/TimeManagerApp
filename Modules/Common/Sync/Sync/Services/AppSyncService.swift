@@ -1,4 +1,4 @@
-import CommonUserProfile
+import CoreUserProfile
 import CoreSync
 import Domain
 import Foundation

@@ -1,7 +1,8 @@
+import CoreAuth
 import CoreNetwork
 import Domain
 import XCTest
-@testable import CommonUserProfile
+@testable import CoreUserProfile
 
 final class DefaultUserProfileServiceTests: XCTestCase {
     func testFetchUserReturnsRemoteUserAndPreservesSnapshotVersionFromCache() async throws {

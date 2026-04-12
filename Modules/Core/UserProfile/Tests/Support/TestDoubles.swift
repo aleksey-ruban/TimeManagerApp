@@ -1,6 +1,7 @@
+import CoreAuth
 import CoreNetwork
 import Foundation
-@testable import CommonUserProfile
+@testable import CoreUserProfile
 
 extension UserDefaults: @retroactive @unchecked Sendable {}
 
@@ -10,6 +11,17 @@ final class NetworkExecutorStub: INetworkExecutor, @unchecked Sendable {
 
     init(result: Result<Data, Error>) {
         self.result = result
+    }
+
+    func execute(_ request: NetworkRequest) async throws -> NetworkResponse {
+        executedRequests.append(request)
+
+        switch result {
+        case let .success(data):
+            return NetworkResponse(data: data, response: httpResponse(statusCode: 200))
+        case let .failure(error):
+            throw error
+        }
     }
 
     func execute<DecodedOutput: Decodable>(
@@ -39,8 +51,17 @@ final class NetworkExecutorFactoryStub: NetworkExecutorFactoryProtocol, @uncheck
     }
 }
 
+func httpResponse(statusCode: Int) -> HTTPURLResponse {
+    HTTPURLResponse(
+        url: URL(string: "https://example.com")!,
+        statusCode: statusCode,
+        httpVersion: nil,
+        headerFields: nil
+    )!
+}
+
 func makeTestDefaults() -> UserDefaults {
-    let suiteName = "CommonUserProfileTests.\(UUID().uuidString)"
+    let suiteName = "CoreUserProfileTests.\(UUID().uuidString)"
     let defaults = UserDefaults(suiteName: suiteName)!
     defaults.removePersistentDomain(forName: suiteName)
     return defaults

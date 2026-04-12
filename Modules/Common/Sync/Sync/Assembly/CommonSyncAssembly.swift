@@ -1,4 +1,4 @@
-import CommonUserProfile
+import CoreUserProfile
 import CoreNetwork
 import CoreStorage
 import CoreSync
