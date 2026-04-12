@@ -29,7 +29,13 @@ final class ActivitySyncRepository: @unchecked Sendable {
                 let existing = try self.resolveUniqueActivity(remoteID: remote.id, context: context)
                 let localVersion = existing?.lastModifiedVersionValue ?? .min
 
-                if existing != nil, remote.lastModifiedVersion <= localVersion {
+                if let existing, remote.lastModifiedVersion <= localVersion {
+                    if remote.lastModifiedVersion == localVersion {
+                        self.hydrateMissingVariationRemoteIDs(
+                            on: existing,
+                            with: remote.variations
+                        )
+                    }
                     continue
                 }
 
@@ -147,6 +153,55 @@ final class ActivitySyncRepository: @unchecked Sendable {
         }
 
         activity.variations = Set(updatedVariations)
+    }
+
+    private func hydrateMissingVariationRemoteIDs(
+        on activity: ActivityMO,
+        with remoteVariations: [RemoteVariationDTO]
+    ) {
+        guard let variations = activity.variations, variations.isEmpty == false else { return }
+
+        var localWithoutRemoteID = variations.filter { $0.remoteIDValue == nil }
+        guard localWithoutRemoteID.isEmpty == false else { return }
+
+        var assignedRemoteIDs = Set(variations.compactMap(\.remoteIDValue))
+
+        for remote in remoteVariations {
+            guard let remoteID = remote.id, assignedRemoteIDs.contains(remoteID) == false else { continue }
+
+            let exactMatches = localWithoutRemoteID.filter {
+                $0.value == remote.value &&
+                $0.syncDeleted == remote.deleted &&
+                Int($0.position) == remote.position
+            }
+            if exactMatches.count == 1, let match = exactMatches.first {
+                match.remoteID = NSNumber(value: remoteID)
+                assignedRemoteIDs.insert(remoteID)
+                localWithoutRemoteID = localWithoutRemoteID.filter { $0.localID != match.localID }
+                continue
+            }
+
+            let valueMatches = localWithoutRemoteID.filter {
+                $0.value == remote.value &&
+                $0.syncDeleted == remote.deleted
+            }
+            if valueMatches.count == 1, let match = valueMatches.first {
+                match.remoteID = NSNumber(value: remoteID)
+                assignedRemoteIDs.insert(remoteID)
+                localWithoutRemoteID = localWithoutRemoteID.filter { $0.localID != match.localID }
+                continue
+            }
+
+            let positionMatches = localWithoutRemoteID.filter {
+                $0.syncDeleted == remote.deleted &&
+                Int($0.position) == remote.position
+            }
+            if positionMatches.count == 1, let match = positionMatches.first {
+                match.remoteID = NSNumber(value: remoteID)
+                assignedRemoteIDs.insert(remoteID)
+                localWithoutRemoteID = localWithoutRemoteID.filter { $0.localID != match.localID }
+            }
+        }
     }
 
     private func resolveUniqueActivity(

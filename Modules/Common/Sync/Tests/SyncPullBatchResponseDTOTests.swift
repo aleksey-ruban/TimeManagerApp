@@ -66,4 +66,45 @@ final class SyncPullBatchResponseDTOTests: XCTestCase {
         XCTAssertTrue(response.hasMore)
         XCTAssertEqual(response.maxSnapshotVersion, SnapshotVersion(Int64(12)))
     }
+
+    func testDecodingChronometryTreatsNullSnapshotListsAsEmptyArrays() throws {
+        let json = """
+        {
+          "message": "Data sent",
+          "data": {
+            "objects": [
+              {
+                "type": "CHRONOMETRY_SNAPSHOT",
+                "payload": {
+                  "id": 4,
+                  "startDate": "2026-04-10",
+                  "endDate": "2026-04-16",
+                  "timeZone": "Europe/Moscow",
+                  "lastModifiedVersion": 29,
+                  "deleted": false,
+                  "categorySnapshotList": null,
+                  "activitySnapshotList": null,
+                  "activityVariationSnapshotList": null,
+                  "activityRecordSnapshotList": null
+                }
+              }
+            ],
+            "nextCursor": null,
+            "hasMore": false
+          }
+        }
+        """
+
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+
+        let response = try decoder.decode(SyncPullBatchResponseDTO.self, from: Data(json.utf8))
+
+        XCTAssertEqual(response.chronometries.count, 1)
+        XCTAssertEqual(response.chronometries[0].categorySnapshotList, [])
+        XCTAssertEqual(response.chronometries[0].activitySnapshotList, [])
+        XCTAssertEqual(response.chronometries[0].activityVariationSnapshotList, [])
+        XCTAssertEqual(response.chronometries[0].activityRecordSnapshotList, [])
+        XCTAssertEqual(response.maxSnapshotVersion, SnapshotVersion(Int64(29)))
+    }
 }

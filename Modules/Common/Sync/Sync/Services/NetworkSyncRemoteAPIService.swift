@@ -63,9 +63,12 @@ public final class NetworkSyncRemoteAPIService: SyncRemoteAPIServiceProtocol, @u
         )
     }
 
-    public func pushChronometries(_ chronometries: [Domain.Chronometry]) async throws -> [SyncPushResultDTO] {
+    public func pushChronometries(
+        _ chronometries: [Domain.Chronometry],
+        accountSnapshotVersion: SnapshotVersion
+    ) async throws -> [SyncPushResultDTO] {
         try await executePush(
-            objects: chronometries.map { $0.makePushRequestObject() }
+            objects: chronometries.map { $0.makePushRequestObject(accountSnapshotVersion: accountSnapshotVersion) }
         )
     }
 

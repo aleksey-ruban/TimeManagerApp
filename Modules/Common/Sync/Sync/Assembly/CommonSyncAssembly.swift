@@ -52,7 +52,11 @@ public struct CommonSyncAssembly: CommonSyncAssemblyProtocol {
             CategoriesPushStage(repository: categoryRepository, remoteAPI: remoteAPI),
             ActivitiesPushStage(repository: activityRepository, remoteAPI: remoteAPI),
             ActivityRecordsPushStage(repository: activityRecordRepository, remoteAPI: remoteAPI),
-            ChronometriesPushStage(repository: chronometryRepository, remoteAPI: remoteAPI),
+            ChronometriesPushStage(
+                repository: chronometryRepository,
+                remoteAPI: remoteAPI,
+                userProfileService: userProfileService
+            ),
         ]
 
         return AppSyncService(

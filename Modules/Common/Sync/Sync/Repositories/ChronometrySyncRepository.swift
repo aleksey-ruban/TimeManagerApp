@@ -74,6 +74,7 @@ final class ChronometrySyncRepository: @unchecked Sendable {
         object.startDate = try SyncDateCodec.day(from: remote.startDate)
         object.endDate = try SyncDateCodec.day(from: remote.endDate)
         object.timeZone = remote.timeZone
+        object.isFinished = remote.finished
         object.syncDeleted = remote.deleted
         object.isDirty = false
 

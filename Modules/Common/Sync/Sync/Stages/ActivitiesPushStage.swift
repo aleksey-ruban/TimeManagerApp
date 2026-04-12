@@ -30,7 +30,13 @@ final class ActivitiesPushStage: SyncPushStageProtocol, @unchecked Sendable {
 
         let acknowledgements = try response.map { result in
             guard result.status?.uppercased() != "ERROR" else {
-                throw CommonSyncError.pushRejected(stage: id.rawValue, localID: result.localId, status: result.status)
+                throw CommonSyncError.pushRejected(
+                    stage: id.rawValue,
+                    localID: result.localId,
+                    status: result.status,
+                    errorCode: result.errorCode,
+                    errorMessage: result.errorMessage
+                )
             }
             return ActivityPushAcknowledgement(
                 localID: result.localId,

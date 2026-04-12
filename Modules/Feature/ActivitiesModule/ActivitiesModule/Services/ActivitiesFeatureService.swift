@@ -99,18 +99,6 @@ final class ActivitiesFeatureService: ActivitiesFeatureServiceProtocol, @uncheck
         try await coreDataStack.performBackgroundTransaction { context in
             guard let category = try self.fetchCategoryMO(id: id, context: context) else { return }
 
-            if category.remoteIDValue == nil {
-                let request = ActivityMO.fetchRequest()
-                request.predicate = NSPredicate(format: "category.localID == %@", id as CVarArg)
-                let linkedActivities = try context.fetch(request)
-                linkedActivities.forEach {
-                    $0.category = nil
-                    $0.isDirty = true
-                }
-                context.delete(category)
-                return
-            }
-
             category.syncDeleted = true
             category.isDirty = true
 
@@ -179,11 +167,6 @@ final class ActivitiesFeatureService: ActivitiesFeatureServiceProtocol, @uncheck
         Self.logger.info("deleteActivity started. id=\(id.uuidString, privacy: .public)")
         try await coreDataStack.performBackgroundTransaction { context in
             guard let activity = try self.fetchActivityMO(id: id, context: context) else { return }
-            if activity.remoteIDValue == nil {
-                context.delete(activity)
-                return
-            }
-
             activity.syncDeleted = true
             activity.isDirty = true
         }
@@ -320,11 +303,6 @@ final class ActivitiesFeatureService: ActivitiesFeatureServiceProtocol, @uncheck
         Self.logger.info("deleteActivityRecord started. id=\(id.uuidString, privacy: .public)")
         try await coreDataStack.performBackgroundTransaction { context in
             guard let record = try self.fetchActivityRecordMO(id: id, context: context) else { return }
-            if record.remoteIDValue == nil {
-                context.delete(record)
-                return
-            }
-
             record.syncDeleted = true
             record.isDirty = true
         }
@@ -507,11 +485,7 @@ private extension ActivitiesFeatureService {
         }
 
         for existing in activity.variations ?? [] where incomingIDs.contains(existing.localID) == false {
-            if existing.remoteIDValue == nil {
-                context.delete(existing)
-            } else {
-                existing.syncDeleted = true
-            }
+            existing.syncDeleted = true
         }
     }
 }

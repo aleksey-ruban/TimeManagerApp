@@ -4,7 +4,7 @@ public enum CommonSyncError: Error, LocalizedError, Sendable {
     case responseCountMismatch(stage: String, expected: Int, received: Int)
     case unsupportedPayload(stage: String)
     case invalidDateString(String)
-    case pushRejected(stage: String, localID: UUID, status: String?)
+    case pushRejected(stage: String, localID: UUID, status: String?, errorCode: String?, errorMessage: String?)
 
     public var errorDescription: String? {
         switch self {
@@ -14,8 +14,11 @@ public enum CommonSyncError: Error, LocalizedError, Sendable {
             return "Unsupported pull payload for stage \(stage)."
         case let .invalidDateString(value):
             return "Invalid date string: \(value)"
-        case let .pushRejected(stage, localID, status):
-            return "Push rejected for stage \(stage), localID \(localID.uuidString), status: \(status ?? "UNKNOWN")."
+        case let .pushRejected(stage, localID, status, errorCode, errorMessage):
+            return """
+            Push rejected for stage \(stage), localID \(localID.uuidString), status: \(status ?? "UNKNOWN"), \
+            errorCode: \(errorCode ?? "UNKNOWN"), errorMessage: \(errorMessage ?? "UNKNOWN").
+            """
         }
     }
 }

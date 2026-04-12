@@ -155,4 +155,81 @@ final class ActivitySyncRepositoryTests: XCTestCase {
         XCTAssertEqual(stored.4.map(\.3), [false, true])
         XCTAssertEqual(stored.4.first?.0, preservedVariationLocalID)
     }
+
+    func testApplyRemoteHydratesMissingVariationRemoteIDsWhenVersionsAreEqual() async throws {
+        let coreDataStack = try makeInMemoryCoreDataStack()
+        let repository = ActivitySyncRepository(coreDataStack: coreDataStack)
+
+        try await coreDataStack.performBackgroundTransaction { context in
+            let activity = ActivityMO(context: context)
+            activity.localID = UUID()
+            activity.remoteID = 10
+            activity.lastModifiedVersion = 7
+            activity.name = "Local Activity"
+            activity.iconName = "figure.run"
+            activity.colorRawValue = ActivityColor.teal.rawValue
+            activity.isDirty = true
+            activity.syncDeleted = false
+
+            let firstVariation = ActivityVariationMO(context: context)
+            firstVariation.localID = UUID()
+            firstVariation.remoteID = nil
+            firstVariation.value = "iOS"
+            firstVariation.position = 0
+            firstVariation.syncDeleted = false
+            firstVariation.activity = activity
+
+            let secondVariation = ActivityVariationMO(context: context)
+            secondVariation.localID = UUID()
+            secondVariation.remoteID = nil
+            secondVariation.value = "Backend"
+            secondVariation.position = 1
+            secondVariation.syncDeleted = false
+            secondVariation.activity = activity
+
+            activity.variations = [firstVariation, secondVariation]
+        }
+
+        let applied = try await repository.applyRemote([
+            RemoteActivityDTO(
+                id: 10,
+                lastModifiedVersion: 7,
+                name: "Server Activity",
+                categoryId: nil,
+                icon: "server.icon",
+                iconColor: "GREEN",
+                variations: [
+                    RemoteVariationDTO(id: 101, position: 0, value: "iOS", deleted: false),
+                    RemoteVariationDTO(id: 102, position: 1, value: "Backend", deleted: false),
+                ],
+                deleted: false
+            )
+        ])
+
+        XCTAssertEqual(applied, 0)
+
+        let stored = try await coreDataStack.performBackgroundTask { context in
+            let request = ActivityMO.fetchRequest()
+            request.fetchLimit = 1
+            request.predicate = NSPredicate(format: "remoteID == 10")
+
+            let activity = try XCTUnwrap(context.fetch(request).first)
+            let variations = (activity.variations ?? [])
+                .sorted { $0.position < $1.position }
+                .map { ($0.remoteIDValue, $0.value) }
+
+            return (
+                activity.name,
+                activity.iconName,
+                activity.isDirty,
+                variations
+            )
+        }
+
+        XCTAssertEqual(stored.0, "Local Activity")
+        XCTAssertEqual(stored.1, "figure.run")
+        XCTAssertTrue(stored.2)
+        XCTAssertEqual(stored.3.map(\.0), [101, 102])
+        XCTAssertEqual(stored.3.map(\.1), ["iOS", "Backend"])
+    }
 }

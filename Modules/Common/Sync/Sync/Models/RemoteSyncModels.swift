@@ -90,11 +90,67 @@ public struct RemoteChronometryDTO: Codable, Sendable, Hashable {
     public let endDate: String
     public let timeZone: String
     public let lastModifiedVersion: Int64
+    public let finished: Bool
     public let deleted: Bool
     public let categorySnapshotList: [RemoteCategorySnapshotDTO]
     public let activitySnapshotList: [RemoteActivitySnapshotDTO]
     public let activityVariationSnapshotList: [RemoteActivityVariationSnapshotDTO]
     public let activityRecordSnapshotList: [RemoteActivityRecordSnapshotDTO]
+
+    public init(
+        id: Int64,
+        startDate: String,
+        endDate: String,
+        timeZone: String,
+        lastModifiedVersion: Int64,
+        finished: Bool,
+        deleted: Bool,
+        categorySnapshotList: [RemoteCategorySnapshotDTO],
+        activitySnapshotList: [RemoteActivitySnapshotDTO],
+        activityVariationSnapshotList: [RemoteActivityVariationSnapshotDTO],
+        activityRecordSnapshotList: [RemoteActivityRecordSnapshotDTO]
+    ) {
+        self.id = id
+        self.startDate = startDate
+        self.endDate = endDate
+        self.timeZone = timeZone
+        self.lastModifiedVersion = lastModifiedVersion
+        self.finished = finished
+        self.deleted = deleted
+        self.categorySnapshotList = categorySnapshotList
+        self.activitySnapshotList = activitySnapshotList
+        self.activityVariationSnapshotList = activityVariationSnapshotList
+        self.activityRecordSnapshotList = activityRecordSnapshotList
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case startDate
+        case endDate
+        case timeZone
+        case lastModifiedVersion
+        case finished
+        case deleted
+        case categorySnapshotList
+        case activitySnapshotList
+        case activityVariationSnapshotList
+        case activityRecordSnapshotList
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = try container.decode(Int64.self, forKey: .id)
+        self.startDate = try container.decode(String.self, forKey: .startDate)
+        self.endDate = try container.decode(String.self, forKey: .endDate)
+        self.timeZone = try container.decode(String.self, forKey: .timeZone)
+        self.lastModifiedVersion = try container.decode(Int64.self, forKey: .lastModifiedVersion)
+        self.finished = try container.decodeIfPresent(Bool.self, forKey: .finished) ?? false
+        self.deleted = try container.decode(Bool.self, forKey: .deleted)
+        self.categorySnapshotList = try container.decodeIfPresent([RemoteCategorySnapshotDTO].self, forKey: .categorySnapshotList) ?? []
+        self.activitySnapshotList = try container.decodeIfPresent([RemoteActivitySnapshotDTO].self, forKey: .activitySnapshotList) ?? []
+        self.activityVariationSnapshotList = try container.decodeIfPresent([RemoteActivityVariationSnapshotDTO].self, forKey: .activityVariationSnapshotList) ?? []
+        self.activityRecordSnapshotList = try container.decodeIfPresent([RemoteActivityRecordSnapshotDTO].self, forKey: .activityRecordSnapshotList) ?? []
+    }
 }
 
 public struct SyncPullRequestDTO: Encodable, Sendable {
@@ -212,6 +268,28 @@ public struct SyncPushResultDTO: Decodable, Sendable, Hashable {
     public let serverId: Int64?
     public let lastModifiedVersion: Int64?
     public let status: String?
+    public let errorCode: String?
+    public let errorMessage: String?
+
+    public init(
+        objectType: SyncObjectTypeDTO,
+        operation: SyncOperationDTO,
+        localId: UUID,
+        serverId: Int64?,
+        lastModifiedVersion: Int64?,
+        status: String?,
+        errorCode: String? = nil,
+        errorMessage: String? = nil
+    ) {
+        self.objectType = objectType
+        self.operation = operation
+        self.localId = localId
+        self.serverId = serverId
+        self.lastModifiedVersion = lastModifiedVersion
+        self.status = status
+        self.errorCode = errorCode
+        self.errorMessage = errorMessage
+    }
 }
 
 private struct SyncPushEnvelopeDTO: Decodable, Sendable {

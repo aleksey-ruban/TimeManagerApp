@@ -94,6 +94,7 @@ extension RemoteChronometryDTO {
             endDate: Self.dayFormatter.string(from: chronometry.endDate),
             timeZone: chronometry.timeZone,
             lastModifiedVersion: chronometry.lastModifiedVersion ?? 0,
+            finished: chronometry.isFinished,
             deleted: chronometry.isDeleted,
             categorySnapshotList: categorySnapshots,
             activitySnapshotList: activitySnapshots,
@@ -234,15 +235,18 @@ extension Domain.ActivityRecord {
 }
 
 extension Domain.Chronometry {
-    func makePushRequestObject(localeIdentifier: String = Locale.current.identifier) -> SyncPushRequestObjectDTO {
+    func makePushRequestObject(
+        accountSnapshotVersion: SnapshotVersion,
+        localeIdentifier: String = Locale.current.identifier
+    ) -> SyncPushRequestObjectDTO {
         let payload = if let remoteID {
             AnyEncodable(
                 FinishChronometryPayloadDTO(
                     id: remoteID,
-                    finishTime: endDate,
+                    finishTime: Date(),
                     local: localeIdentifier,
                     timeZone: timeZone,
-                    snapshotVersion: SnapshotVersion(lastModifiedVersion ?? Int64(0)),
+                    snapshotVersion: accountSnapshotVersion,
                     deleted: isDeleted
                 )
             )
