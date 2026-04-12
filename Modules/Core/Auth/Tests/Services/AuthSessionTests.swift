@@ -8,12 +8,39 @@ final class AuthSessionTests: XCTestCase {
         let session = try AuthService(
             tokenStore: InMemoryTokenStore(),
             apiService: AuthAPIServiceStub(),
-            deviceIDStore: DeviceIDStoreStub()
+            deviceIDStore: DeviceIDStoreStub(),
+            sessionCleanupRegistry: AuthSessionCleanupRegistry()
         )
 
         let state = await session.authState()
 
         XCTAssertEqual(state, .unauthenticated)
+    }
+
+    func testLaunchAuthorizationStateIsUnauthenticatedWhenThereIsNoStoredSession() async throws {
+        let session = try AuthService(
+            tokenStore: InMemoryTokenStore(),
+            apiService: AuthAPIServiceStub(),
+            deviceIDStore: DeviceIDStoreStub(),
+            sessionCleanupRegistry: AuthSessionCleanupRegistry()
+        )
+
+        let state = await session.launchAuthorizationState()
+
+        XCTAssertEqual(state, .unauthenticated)
+    }
+
+    func testLaunchAuthorizationStateIsAuthenticatedWhenStoredSessionExists() async throws {
+        let session = try AuthService(
+            tokenStore: InMemoryTokenStore(storedSession: makeSession()),
+            apiService: AuthAPIServiceStub(),
+            deviceIDStore: DeviceIDStoreStub(),
+            sessionCleanupRegistry: AuthSessionCleanupRegistry()
+        )
+
+        let state = await session.launchAuthorizationState()
+
+        XCTAssertEqual(state, .authenticated)
     }
 
     func testLoginStoresSessionAndMarksStateAsFresh() async throws {
@@ -29,7 +56,8 @@ final class AuthSessionTests: XCTestCase {
         let session = try AuthService(
             tokenStore: tokenStore,
             apiService: apiService,
-            deviceIDStore: DeviceIDStoreStub()
+            deviceIDStore: DeviceIDStoreStub(),
+            sessionCleanupRegistry: AuthSessionCleanupRegistry()
         )
 
         try await session.login(
@@ -47,6 +75,31 @@ final class AuthSessionTests: XCTestCase {
         XCTAssertEqual(tokenStore.saveCallCount, 1)
     }
 
+    func testLoginFailureClearsLocalArtifactsWhenCleanupServiceIsConfigured() async throws {
+        let cleanupService = SessionCleanupServiceSpy()
+        let registry = AuthSessionCleanupRegistry(service: cleanupService)
+        let session = try AuthService(
+            tokenStore: InMemoryTokenStore(),
+            apiService: AuthAPIServiceStub(
+                loginResult: .failure(NetworkError.httpStatusCode(401, Data()))
+            ),
+            deviceIDStore: DeviceIDStoreStub(),
+            sessionCleanupRegistry: registry
+        )
+
+        do {
+            try await session.login(email: "user@example.com", password: "secret")
+            XCTFail("Expected login failure")
+        } catch let error as NetworkError {
+            XCTAssertEqual(error, .httpStatusCode(401, Data()))
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+
+        let clearCallCount = await cleanupService.clearCallCount
+        XCTAssertEqual(clearCallCount, 1)
+    }
+
     func testAuthorizeRefreshesExpiredAccessToken() async throws {
         let storedSession = makeSession()
         let newTokens = AuthTokens(
@@ -58,9 +111,10 @@ final class AuthSessionTests: XCTestCase {
         let session = try AuthService(
             tokenStore: tokenStore,
             apiService: apiService,
-            deviceIDStore: DeviceIDStoreStub()
+            deviceIDStore: DeviceIDStoreStub(),
+            sessionCleanupRegistry: AuthSessionCleanupRegistry()
         )
-        try await session.recoverAuthorization(for: unauthorizedRequest())
+        _ = try await session.recoverAuthorization(for: unauthorizedRequest())
         let request = NetworkRequest(
             method: .get,
             baseURL: URL(string: "https://example.com")!,
@@ -90,7 +144,8 @@ final class AuthSessionTests: XCTestCase {
         let session = try AuthService(
             tokenStore: InMemoryTokenStore(storedSession: storedSession),
             apiService: apiService,
-            deviceIDStore: DeviceIDStoreStub()
+            deviceIDStore: DeviceIDStoreStub(),
+            sessionCleanupRegistry: AuthSessionCleanupRegistry()
         )
 
         let recoveredRequest = try await session.recoverAuthorization(for: unauthorizedRequest())
@@ -118,7 +173,8 @@ final class AuthSessionTests: XCTestCase {
         let session = try AuthService(
             tokenStore: InMemoryTokenStore(storedSession: storedSession),
             apiService: apiService,
-            deviceIDStore: DeviceIDStoreStub()
+            deviceIDStore: DeviceIDStoreStub(),
+            sessionCleanupRegistry: AuthSessionCleanupRegistry()
         )
         let failedRequest = NetworkRequest(
             method: .get,
@@ -145,7 +201,8 @@ final class AuthSessionTests: XCTestCase {
         let session = try AuthService(
             tokenStore: tokenStore,
             apiService: apiService,
-            deviceIDStore: DeviceIDStoreStub()
+            deviceIDStore: DeviceIDStoreStub(),
+            sessionCleanupRegistry: AuthSessionCleanupRegistry()
         )
 
         do {
@@ -173,7 +230,8 @@ final class AuthSessionTests: XCTestCase {
         let session = try AuthService(
             tokenStore: tokenStore,
             apiService: apiService,
-            deviceIDStore: DeviceIDStoreStub()
+            deviceIDStore: DeviceIDStoreStub(),
+            sessionCleanupRegistry: AuthSessionCleanupRegistry()
         )
 
         do {
@@ -217,7 +275,8 @@ final class AuthSessionTests: XCTestCase {
         let session = try AuthService(
             tokenStore: tokenStore,
             apiService: AuthAPIServiceStub(),
-            deviceIDStore: DeviceIDStoreStub()
+            deviceIDStore: DeviceIDStoreStub(),
+            sessionCleanupRegistry: AuthSessionCleanupRegistry()
         )
 
         try await session.logout()
@@ -233,7 +292,8 @@ final class AuthSessionTests: XCTestCase {
         let session = try AuthService(
             tokenStore: tokenStore,
             apiService: AuthAPIServiceStub(),
-            deviceIDStore: DeviceIDStoreStub()
+            deviceIDStore: DeviceIDStoreStub(),
+            sessionCleanupRegistry: AuthSessionCleanupRegistry()
         )
 
         try await session.acceptAuthenticatedSession(
@@ -253,7 +313,8 @@ final class AuthSessionTests: XCTestCase {
         let session = try AuthService(
             tokenStore: InMemoryTokenStore(),
             apiService: AuthAPIServiceStub(),
-            deviceIDStore: DeviceIDStoreStub(deviceID: "stable-device-id")
+            deviceIDStore: DeviceIDStoreStub(deviceID: "stable-device-id"),
+            sessionCleanupRegistry: AuthSessionCleanupRegistry()
         )
 
         let deviceID = try await session.currentDeviceID()
@@ -272,7 +333,8 @@ final class AuthSessionTests: XCTestCase {
                     )
                 )
             ),
-            deviceIDStore: DeviceIDStoreStub()
+            deviceIDStore: DeviceIDStoreStub(),
+            sessionCleanupRegistry: AuthSessionCleanupRegistry()
         )
 
         try await session.login(
