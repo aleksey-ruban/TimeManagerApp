@@ -1,0 +1,17 @@
+public enum ActivityColor: String, Codable, Sendable, CaseIterable, Hashable {
+    case red = "RED"
+    case coral = "CORAL"
+    case orange = "ORANGE"
+    case amber = "AMBER"
+    case green = "GREEN"
+    case teal = "TEAL"
+    case lightBlue = "LIGHT_BLUE"
+    case blue = "BLUE"
+    case indigo = "INDIGO"
+    case purple = "PURPLE"
+    case lilac = "LILAC"
+    case pink = "PINK"
+    case gray = "GRAY"
+    case olive = "OLIVE"
+    case brown = "BROWN"
+}
