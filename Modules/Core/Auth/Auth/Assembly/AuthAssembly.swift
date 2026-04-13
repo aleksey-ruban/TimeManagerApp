@@ -11,16 +11,19 @@ public struct AuthAssembly: AuthAssemblyProtocol {
     private let tokenStore: TokenStoreProtocol
     private let deviceIDStore: DeviceIDStoreProtocol
     private let deviceModelProvider: DeviceModelProviderProtocol
+    private let sessionCleanupRegistry: AuthSessionCleanupRegistry
 
     public init(
         configuration: AuthAPIConfiguration,
-        networkExecutorFactory: NetworkExecutorFactoryProtocol
+        networkExecutorFactory: NetworkExecutorFactoryProtocol,
+        sessionCleanupRegistry: AuthSessionCleanupRegistry = AuthSessionCleanupRegistry()
     ) {
         self.configuration = configuration
         self.networkExecutorFactory = networkExecutorFactory
         self.tokenStore = KeychainTokenStore()
         self.deviceIDStore = KeychainDeviceIDStore()
         self.deviceModelProvider = SystemDeviceModelProvider()
+        self.sessionCleanupRegistry = sessionCleanupRegistry
     }
 
     init(
@@ -28,13 +31,15 @@ public struct AuthAssembly: AuthAssemblyProtocol {
         networkExecutorFactory: NetworkExecutorFactoryProtocol,
         tokenStore: TokenStoreProtocol,
         deviceIDStore: DeviceIDStoreProtocol,
-        deviceModelProvider: DeviceModelProviderProtocol
+        deviceModelProvider: DeviceModelProviderProtocol,
+        sessionCleanupRegistry: AuthSessionCleanupRegistry = AuthSessionCleanupRegistry()
     ) {
         self.configuration = configuration
         self.networkExecutorFactory = networkExecutorFactory
         self.tokenStore = tokenStore
         self.deviceIDStore = deviceIDStore
         self.deviceModelProvider = deviceModelProvider
+        self.sessionCleanupRegistry = sessionCleanupRegistry
     }
 
     public func makeModule() throws -> AuthModule {
@@ -47,7 +52,8 @@ public struct AuthAssembly: AuthAssemblyProtocol {
         let authService = try AuthService(
             tokenStore: tokenStore,
             apiService: apiService,
-            deviceIDStore: deviceIDStore
+            deviceIDStore: deviceIDStore,
+            sessionCleanupRegistry: sessionCleanupRegistry
         )
         let authInterceptor = AuthInterceptor(authSession: authService)
 

@@ -8,7 +8,8 @@ final class AuthInterceptorTests: XCTestCase {
         let session = try AuthService(
             tokenStore: InMemoryTokenStore(),
             apiService: AuthAPIServiceStub(),
-            deviceIDStore: DeviceIDStoreStub()
+            deviceIDStore: DeviceIDStoreStub(),
+            sessionCleanupRegistry: AuthSessionCleanupRegistry()
         )
         let client = NetworkClientQueueStub(
             results: [
@@ -44,7 +45,8 @@ final class AuthInterceptorTests: XCTestCase {
         let session = try AuthService(
             tokenStore: tokenStore,
             apiService: apiService,
-            deviceIDStore: DeviceIDStoreStub()
+            deviceIDStore: DeviceIDStoreStub(),
+            sessionCleanupRegistry: AuthSessionCleanupRegistry()
         )
         let client = NetworkClientQueueStub(
             results: [
@@ -75,7 +77,8 @@ final class AuthInterceptorTests: XCTestCase {
             authSession: try AuthService(
                 tokenStore: InMemoryTokenStore(),
                 apiService: AuthAPIServiceStub(),
-                deviceIDStore: DeviceIDStoreStub()
+                deviceIDStore: DeviceIDStoreStub(),
+                sessionCleanupRegistry: AuthSessionCleanupRegistry()
             )
         )
         let client = NetworkClientQueueStub(results: [])

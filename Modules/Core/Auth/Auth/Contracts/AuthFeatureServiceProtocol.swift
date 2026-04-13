@@ -1,6 +1,7 @@
 import Foundation
 
 public protocol AuthFeatureServiceProtocol: Sendable {
+    func launchAuthorizationState() async -> AuthLaunchAuthorizationState
     func login(email: String, password: String) async throws
     func acceptAuthenticatedSession(
         email: String,

@@ -41,6 +41,7 @@ let project = Project(
             ],
             dependencies: [
                 .project(target: "CoreNetwork", path: "../Network"),
+                .project(target: "CoreSessionCleanup", path: "../SessionCleanup"),
             ],
             settings: .settings(base: moduleSettings)
         ),
@@ -57,6 +58,7 @@ let project = Project(
             dependencies: [
                 .target(name: ModuleConfig.name),
                 .project(target: "CoreNetwork", path: "../Network"),
+                .project(target: "CoreSessionCleanup", path: "../SessionCleanup"),
             ],
             settings: .settings(base: moduleSettings.merging([
                 "SWIFT_EMIT_LOC_STRINGS": "NO",

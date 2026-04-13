@@ -1,3 +1,4 @@
+import CoreSessionCleanup
 import Foundation
 import CoreNetwork
 @testable import CoreAuth
@@ -75,6 +76,16 @@ final class DeviceIDStoreStub: DeviceIDStoreProtocol, @unchecked Sendable {
     }
 }
 
+actor SessionCleanupServiceSpy: SessionCleanupServiceProtocol {
+    private(set) var clearCallCount = 0
+    var clearResult: Result<Void, Error> = .success(())
+
+    func clearLocalSessionArtifacts() async throws {
+        clearCallCount += 1
+        try clearResult.get()
+    }
+}
+
 struct DeviceModelProviderStub: DeviceModelProviderProtocol {
     let model: String
 
@@ -107,6 +118,17 @@ final class NetworkExecutorStub: INetworkExecutor, @unchecked Sendable {
 
     init(result: Result<Data, Error>) {
         self.result = result
+    }
+
+    func execute(_ request: NetworkRequest) async throws -> NetworkResponse {
+        executedRequests.append(request)
+
+        switch result {
+        case let .success(data):
+            return NetworkResponse(data: data, response: httpResponse(statusCode: 200))
+        case let .failure(error):
+            throw error
+        }
     }
 
     func execute<DecodedOutput: Decodable>(

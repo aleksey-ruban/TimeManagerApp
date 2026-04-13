@@ -11,7 +11,8 @@ final class AuthAssemblyTests: XCTestCase {
             networkExecutorFactory: networkExecutorFactory,
             tokenStore: InMemoryTokenStore(),
             deviceIDStore: DeviceIDStoreStub(),
-            deviceModelProvider: DeviceModelProviderStub()
+            deviceModelProvider: DeviceModelProviderStub(),
+            sessionCleanupRegistry: AuthSessionCleanupRegistry()
         )
 
         let module = try assembly.makeModule()

@@ -1,10 +1,12 @@
 import Foundation
+import CoreSessionCleanup
 import CoreNetwork
 
 actor AuthService: AuthSessionProtocol, AuthFeatureServiceProtocol {
     private let tokenStore: TokenStoreProtocol
     private let apiService: AuthAPIServiceProtocol
     private let deviceIDStore: DeviceIDStoreProtocol
+    private let sessionCleanupRegistry: AuthSessionCleanupRegistry
 
     private var storedSession: StoredAuthSession?
     private var state: AuthState
@@ -15,11 +17,13 @@ actor AuthService: AuthSessionProtocol, AuthFeatureServiceProtocol {
     init(
         tokenStore: TokenStoreProtocol,
         apiService: AuthAPIServiceProtocol,
-        deviceIDStore: DeviceIDStoreProtocol
+        deviceIDStore: DeviceIDStoreProtocol,
+        sessionCleanupRegistry: AuthSessionCleanupRegistry
     ) throws {
         self.tokenStore = tokenStore
         self.apiService = apiService
         self.deviceIDStore = deviceIDStore
+        self.sessionCleanupRegistry = sessionCleanupRegistry
         let storedSession = try tokenStore.load()
         self.storedSession = storedSession
         self.state = storedSession == nil ? .unauthenticated : .authenticatedAndTokensFresh
@@ -27,6 +31,17 @@ actor AuthService: AuthSessionProtocol, AuthFeatureServiceProtocol {
 
     func authState() async -> AuthState {
         state
+    }
+
+    func launchAuthorizationState() async -> AuthLaunchAuthorizationState {
+        switch state {
+        case .unauthenticated:
+            .unauthenticated
+        case .authenticatedAndTokensFresh,
+                .authenticatedAndAccessTokenExpired,
+                .authenticatedAndAccessAndRefreshTokensExpired:
+            .authenticated
+        }
     }
 
     func stateUpdates() async -> AsyncStream<AuthState> {
@@ -49,8 +64,15 @@ actor AuthService: AuthSessionProtocol, AuthFeatureServiceProtocol {
 
     func login(email: String, password: String) async throws {
         let credentials = AuthCredentials(email: email, password: password)
-        let tokens = try await apiService.login(with: credentials, isAutomatic: false)
-        try storeAuthenticatedSession(credentials: credentials, tokens: tokens)
+        do {
+            let tokens = try await apiService.login(with: credentials, isAutomatic: false)
+            try storeAuthenticatedSession(credentials: credentials, tokens: tokens)
+        } catch {
+            if let sessionCleanupService = sessionCleanupRegistry.service {
+                try await sessionCleanupService.clearLocalSessionArtifacts()
+            }
+            throw error
+        }
     }
 
     func acceptAuthenticatedSession(
@@ -72,9 +94,7 @@ actor AuthService: AuthSessionProtocol, AuthFeatureServiceProtocol {
     }
 
     func logout() async throws {
-        try tokenStore.clear()
-        storedSession = nil
-        updateState(.unauthenticated)
+        try await terminateSession()
     }
 
     func authorize(_ request: NetworkRequest) async throws -> NetworkRequest {
@@ -198,6 +218,10 @@ actor AuthService: AuthSessionProtocol, AuthFeatureServiceProtocol {
     }
 
     private func transitionToManualAuthorization() async throws {
+        try await terminateSession()
+    }
+
+    private func terminateSession() async throws {
         try tokenStore.clear()
         storedSession = nil
         updateState(.unauthenticated)
