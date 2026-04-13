@@ -162,7 +162,7 @@ private final class ActivityRecordPickerCell: UITableViewCell {
         activityView.apply(
             activity: activity,
             categoryName: viewModel.categoryName,
-            trailingStyle: .chevron,
+            trailingStyle: .play,
             rowBackgroundColor: .white
         )
     }

@@ -18,7 +18,8 @@ final class CategoryPickerViewController: BaseViewController, CategoryPickerView
     private let searchResultsContainer = UIView()
     private let bottomContainer = FloatingBottomContainer(
         configuration: .init(
-            primaryButton: .init(title: "Продолжить", isEnabled: false)
+            primaryButton: .init(title: "Продолжить", isEnabled: false),
+            gradient: .init(isEnabled: false)
         )
     )
     private var scrollBottomConstraint: NSLayoutConstraint?
@@ -38,6 +39,11 @@ final class CategoryPickerViewController: BaseViewController, CategoryPickerView
         super.viewDidLoad()
         setupView()
         presenter.viewDidLoad()
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        updateBottomInsets()
     }
 
     func render(viewModel: CategoryPickerViewModel) {
@@ -122,8 +128,8 @@ private extension CategoryPickerViewController {
         }
         view.addSubview(bottomContainer)
 
-        scrollBottomConstraint = scrollView.bottomAnchor.constraint(equalTo: bottomContainer.topAnchor)
-        searchResultsBottomConstraint = searchResultsContainer.bottomAnchor.constraint(equalTo: bottomContainer.topAnchor)
+        scrollBottomConstraint = scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        searchResultsBottomConstraint = searchResultsContainer.bottomAnchor.constraint(equalTo: view.bottomAnchor)
 
         NSLayoutConstraint.activate([
             searchBar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: DesignSpacing.xSmall),
@@ -286,6 +292,13 @@ private extension CategoryPickerViewController {
     func handleApplySelectedCategory() {
         presenter.didTapApplySelectedCategory()
     }
+
+    func updateBottomInsets() {
+        let bottomInset = max(bottomContainer.bounds.height + 32, 120)
+        scrollView.contentInset.bottom = bottomInset
+        scrollView.verticalScrollIndicatorInsets.bottom = bottomInset
+        searchResultsController.additionalScrollBottomInset = bottomInset
+    }
 }
 
 extension CategoryPickerViewController: UISearchBarDelegate {
@@ -316,6 +329,12 @@ private final class CategorySearchResultsViewController: BaseViewController {
     private var viewModel = CategoryPickerSearchViewModel(items: [])
     private var onSelect: ((UUID) -> Void)?
     private let tableView = UITableView(frame: .zero, style: .plain)
+    var additionalScrollBottomInset: CGFloat = 0 {
+        didSet {
+            tableView.contentInset.bottom = additionalScrollBottomInset
+            tableView.verticalScrollIndicatorInsets.bottom = additionalScrollBottomInset
+        }
+    }
 
     override func viewDidLoad() {
         super.viewDidLoad()

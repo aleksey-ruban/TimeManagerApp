@@ -16,7 +16,7 @@ final class ActivityEditorViewController: BaseViewController, ActivityEditorView
         resolverSource: .systemSymbol,
         preferredSymbolConfiguration: UIImage.SymbolConfiguration(pointSize: 24, weight: .semibold)
     )
-    private let nameField = CommonTextField(configuration: .init(hint: "Название задачи"))
+    private let nameField = CommonTextField(configuration: .init(hint: "Название задачи", showsDoneAccessory: false))
     private let categoryContainerView = UIView()
     private let categoryHeaderButton = UIButton(type: .system)
     private let categoryTitleLabel = UILabel()
@@ -24,7 +24,7 @@ final class ActivityEditorViewController: BaseViewController, ActivityEditorView
     private let categoryChevronImageView = UIImageView()
     private let quickCategoryScrollView = UIScrollView()
     private let quickCategoryStackView = UIStackView()
-    private let variationField = CommonTextField(configuration: .init(hint: "Название вариации"))
+    private let variationField = CommonTextField(configuration: .init(hint: "Название вариации", showsDoneAccessory: false))
     private let addVariationButton = UIButton(type: .system)
     private let variationsTableView = ContentSizedTableView(frame: .zero, style: .plain)
     private let bottomContainer = FloatingBottomContainer(
@@ -54,7 +54,17 @@ final class ActivityEditorViewController: BaseViewController, ActivityEditorView
     override func viewDidLoad() {
         super.viewDidLoad()
         setupView()
+        configureKeyboardHandling()
         presenter.viewDidLoad()
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        updateScrollInsets(bottomInset: defaultBottomInset())
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
 
     func render(viewModel: ActivityEditorViewModel) {
@@ -116,7 +126,7 @@ private extension ActivityEditorViewController {
         scrollView.snp.makeConstraints { make in
             make.top.equalTo(view.safeAreaLayoutGuide)
             make.leading.trailing.equalToSuperview()
-            make.bottom.equalTo(bottomContainer.snp.top)
+            make.bottom.equalToSuperview()
         }
 
         contentStackView.snp.makeConstraints { make in
@@ -346,6 +356,65 @@ private extension ActivityEditorViewController {
         variationInput = ""
         variationField.text = ""
     }
+
+    func configureKeyboardHandling() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleKeyboardFrameChange(_:)),
+            name: UIResponder.keyboardWillChangeFrameNotification,
+            object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleKeyboardHideNotification),
+            name: UIResponder.keyboardWillHideNotification,
+            object: nil
+        )
+    }
+
+    @objc
+    func handleKeyboardFrameChange(_ notification: Notification) {
+        guard
+            let userInfo = notification.userInfo,
+            let keyboardFrameValue = userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue,
+            let duration = userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? NSNumber,
+            let curveRawValue = userInfo[UIResponder.keyboardAnimationCurveUserInfoKey] as? NSNumber
+        else {
+            return
+        }
+
+        let keyboardFrame = view.convert(keyboardFrameValue.cgRectValue, from: nil)
+        let overlap = max(view.bounds.maxY - keyboardFrame.minY, 0)
+        let bottomInset = defaultBottomInset() + overlap + 24
+        let options = UIView.AnimationOptions(rawValue: UInt(curveRawValue.intValue << 16))
+
+        UIView.animate(withDuration: duration.doubleValue, delay: 0, options: [options, .beginFromCurrentState]) {
+            self.updateScrollInsets(bottomInset: bottomInset)
+            self.view.layoutIfNeeded()
+        }
+
+        scrollActiveFieldIntoView(extraOffset: overlap + 32)
+    }
+
+    @objc
+    func handleKeyboardHideNotification() {
+        updateScrollInsets(bottomInset: defaultBottomInset())
+    }
+
+    func defaultBottomInset() -> CGFloat {
+        max(bottomContainer.bounds.height + 24, 120)
+    }
+
+    func updateScrollInsets(bottomInset: CGFloat) {
+        scrollView.contentInset.bottom = bottomInset
+        scrollView.verticalScrollIndicatorInsets.bottom = bottomInset
+    }
+
+    func scrollActiveFieldIntoView(extraOffset: CGFloat) {
+        guard let responder = view.findFirstResponder() else { return }
+        let targetRect = responder.convert(responder.bounds, to: scrollView).insetBy(dx: 0, dy: -extraOffset)
+        scrollView.scrollRectToVisible(targetRect, animated: true)
+    }
 }
 
 @MainActor
@@ -435,6 +504,22 @@ extension ActivityEditorViewController: UITableViewDragDelegate, UITableViewDrop
 
     func tableView(_ tableView: UITableView, dropSessionDidUpdate session: any UIDropSession, withDestinationIndexPath destinationIndexPath: IndexPath?) -> UITableViewDropProposal {
         UITableViewDropProposal(operation: .move, intent: .insertAtDestinationIndexPath)
+    }
+}
+
+private extension UIView {
+    func findFirstResponder() -> UIView? {
+        if isFirstResponder {
+            return self
+        }
+
+        for subview in subviews {
+            if let responder = subview.findFirstResponder() {
+                return responder
+            }
+        }
+
+        return nil
     }
 }
 

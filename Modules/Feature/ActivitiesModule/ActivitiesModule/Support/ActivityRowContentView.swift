@@ -264,25 +264,22 @@ private extension ActivityRowBaseView {
             trailingContainerView.isHidden = false
             trailingLabel.isHidden = true
             trailingImageView.isHidden = false
-            trailingImageView.image = UIImage(
-                systemName: "chevron.right",
-                withConfiguration: UIImage.SymbolConfiguration(pointSize: 16, weight: .medium)
-            )
-            trailingImageView.tintColor = DesignColor.textSecondary
-            updateTrailingImageSize(CGSize(width: 18, height: 18))
+            trailingImageView.image = UIImage(named: "StartTask")
+            trailingImageView.tintColor = nil
+            updateTrailingImageSize(CGSize(width: 30, height: 30))
         case .play:
             trailingContainerView.isHidden = false
             trailingLabel.isHidden = true
             trailingImageView.isHidden = false
-            trailingImageView.image = UIImage(systemName: "play.circle")
-            trailingImageView.tintColor = DesignColor.accent
+            trailingImageView.image = UIImage(named: "StartTask")
+            trailingImageView.tintColor = nil
             updateTrailingImageSize(CGSize(width: 30, height: 30))
         case let .stop(startedAt):
             trailingContainerView.isHidden = false
             trailingLabel.isHidden = false
             trailingImageView.isHidden = false
-            trailingImageView.image = UIImage(systemName: "pause.circle")
-            trailingImageView.tintColor = DesignColor.accent
+            trailingImageView.image = UIImage(named: "StopTask")
+            trailingImageView.tintColor = nil
             updateTrailingImageSize(CGSize(width: 30, height: 30))
             updateElapsedTimeLabel(startedAt: startedAt)
             timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in

@@ -18,6 +18,7 @@ final class ActivityListViewController: BaseViewController, ActivityListView {
             primaryButton: .init(title: "Добавить задачу")
         )
     )
+    private let tableBottomInset: CGFloat = 120
 
     init(presenter: ActivityListPresenter) {
         self.presenter = presenter
@@ -38,6 +39,11 @@ final class ActivityListViewController: BaseViewController, ActivityListView {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         presenter.viewWillAppear()
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        updateTableInsets()
     }
 
     func render(viewModel: ActivityListViewModel) {
@@ -125,6 +131,11 @@ private extension ActivityListViewController {
         presenter.didTapAdd()
     }
 
+    func updateTableInsets() {
+        let bottomInset = bottomContainer.bounds.height + tableBottomInset
+        tableView.contentInset.bottom = bottomInset
+        tableView.verticalScrollIndicatorInsets.bottom = bottomInset
+    }
 }
 
 extension ActivityListViewController: UITableViewDataSource, UITableViewDelegate {
@@ -221,7 +232,7 @@ private final class ActivityListCell: UITableViewCell {
         activityView.apply(
             activity: activity,
             categoryName: viewModel.categoryName,
-            trailingStyle: .chevron,
+            trailingStyle: .play,
             rowBackgroundColor: .white
         )
     }

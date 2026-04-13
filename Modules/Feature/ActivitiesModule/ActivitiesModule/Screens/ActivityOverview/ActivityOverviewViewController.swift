@@ -179,7 +179,7 @@ private extension ActivityOverviewViewController {
         contentStackView.addArrangedSubview(recordsSectionView)
 
         scrollView.snp.makeConstraints { make in
-            make.edges.equalTo(view.safeAreaLayoutGuide)
+            make.edges.equalToSuperview()
         }
 
         contentStackView.snp.makeConstraints { make in
