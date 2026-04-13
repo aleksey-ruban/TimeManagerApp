@@ -1,6 +1,6 @@
 @preconcurrency import CoreData
 
-public protocol CoreDataStackProtocol: ManagedObjectContextProvider {
+public protocol CoreDataStackProtocol: ManagedObjectContextProvider, Sendable {
     var persistentContainer: NSPersistentContainer { get }
 
     func performBackgroundTask<T: Sendable>(
@@ -18,4 +18,6 @@ public protocol CoreDataStackProtocol: ManagedObjectContextProvider {
 
     @MainActor
     func saveViewContextIfNeeded() throws
+
+    func destroyAllData() async throws
 }

@@ -5,6 +5,8 @@ public final class CoreDataStack: CoreDataStackProtocol, @unchecked Sendable {
     public let persistentContainer: NSPersistentContainer
 
     private let configuration: CoreDataStackConfiguration
+    private let persistentStoreReloadCondition = NSCondition()
+    private var isReloadingPersistentStores = false
 
     public init(configuration: CoreDataStackConfiguration) throws {
         self.configuration = configuration
@@ -34,6 +36,7 @@ public final class CoreDataStack: CoreDataStackProtocol, @unchecked Sendable {
     }
 
     public func newBackgroundContext() -> NSManagedObjectContext {
+        waitUntilPersistentStoresAvailable()
         let context = persistentContainer.newBackgroundContext()
         configureBackgroundContext(context)
         return context
@@ -72,6 +75,34 @@ public final class CoreDataStack: CoreDataStackProtocol, @unchecked Sendable {
         try viewContext.saveIfNeeded()
     }
 
+    public func destroyAllData() async throws {
+        let persistentStoreCoordinator = persistentContainer.persistentStoreCoordinator
+        let persistentStoreDescriptions = persistentContainer.persistentStoreDescriptions
+        beginPersistentStoreReload()
+        defer { endPersistentStoreReload() }
+
+        await MainActor.run {
+            persistentContainer.viewContext.performAndWait {
+                persistentContainer.viewContext.reset()
+            }
+        }
+
+        for store in Array(persistentStoreCoordinator.persistentStores) {
+            try persistentStoreCoordinator.remove(store)
+
+            guard let storeURL = store.url else { continue }
+
+            try destroyPersistentStoreFiles(
+                at: storeURL,
+                type: store.type
+            )
+        }
+
+        persistentContainer.persistentStoreDescriptions = persistentStoreDescriptions
+        try Self.loadPersistentStores(for: persistentContainer)
+        configureContexts()
+    }
+
     private func configureContexts() {
         let viewContext = persistentContainer.viewContext
         viewContext.name = "CoreDataStack.viewContext"
@@ -101,6 +132,28 @@ public final class CoreDataStack: CoreDataStackProtocol, @unchecked Sendable {
                 }
             }
         }
+    }
+
+    private func waitUntilPersistentStoresAvailable() {
+        persistentStoreReloadCondition.lock()
+        defer { persistentStoreReloadCondition.unlock() }
+
+        while isReloadingPersistentStores {
+            persistentStoreReloadCondition.wait()
+        }
+    }
+
+    private func beginPersistentStoreReload() {
+        persistentStoreReloadCondition.lock()
+        isReloadingPersistentStores = true
+        persistentStoreReloadCondition.unlock()
+    }
+
+    private func endPersistentStoreReload() {
+        persistentStoreReloadCondition.lock()
+        isReloadingPersistentStores = false
+        persistentStoreReloadCondition.broadcast()
+        persistentStoreReloadCondition.unlock()
     }
 
     private static func makeManagedObjectModel(
@@ -169,6 +222,29 @@ public final class CoreDataStack: CoreDataStackProtocol, @unchecked Sendable {
 
         if let loadError {
             throw CoreDataStackError.persistentStoreLoadFailed(underlyingError: loadError)
+        }
+    }
+
+    private func destroyPersistentStoreFiles(
+        at storeURL: URL,
+        type: String
+    ) throws {
+        guard type == NSSQLiteStoreType else {
+            return
+        }
+
+        let fileManager = FileManager.default
+        let sidecarExtensions = ["-shm", "-wal"]
+
+        if fileManager.fileExists(atPath: storeURL.path) {
+            try fileManager.removeItem(at: storeURL)
+        }
+
+        for extensionSuffix in sidecarExtensions {
+            let sidecarURL = URL(fileURLWithPath: storeURL.path + extensionSuffix)
+            if fileManager.fileExists(atPath: sidecarURL.path) {
+                try fileManager.removeItem(at: sidecarURL)
+            }
         }
     }
 }
