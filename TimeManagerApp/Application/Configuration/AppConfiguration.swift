@@ -2,7 +2,14 @@ import Foundation
 import CoreNetwork
 
 enum AppConfiguration {
+    private static let apiBaseURLOverrideKey = "API_BASE_URL_OVERRIDE"
+
     static func apiBaseURL() -> URL {
+        if let overrideRawValue = ProcessInfo.processInfo.environment[apiBaseURLOverrideKey],
+           let overrideURL = URL(string: overrideRawValue) {
+            return overrideURL
+        }
+
         guard
             let rawValue = Bundle.main.object(forInfoDictionaryKey: "APIBaseURL") as? String,
             let url = URL(string: rawValue)

@@ -5,10 +5,13 @@ import PackageDescription
     import struct ProjectDescription.PackageSettings
 
     let packageSettings = PackageSettings(
-        // Customize the product types for specific package product
-        // Default is .staticFramework
-        // productTypes: ["Alamofire": .framework,]
-        productTypes: [:]
+        // SnapKit is consumed by several dynamic feature frameworks.
+        // Keeping it as Tuist's default `.staticFramework` duplicates its
+        // symbols in each feature module and triggers Objective-C runtime
+        // duplicate-class warnings inside the app bundle.
+        productTypes: [
+            "SnapKit": .framework,
+        ]
     )
 #endif
 
