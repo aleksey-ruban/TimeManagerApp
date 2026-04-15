@@ -31,7 +31,11 @@ final class NetworkAuthAPIServiceTests: XCTestCase {
         XCTAssertEqual(json["deviceId"] as? String, "device-id")
         XCTAssertEqual(json["deviceModel"] as? String, "iPhone 16 Pro Black")
         XCTAssertEqual(json["isAutomatic"] as? Bool, true)
-        XCTAssertFalse((request.headers["Idempotency-Key"] ?? "").isEmpty)
+        if case let .key(key) = request.idempotency {
+            XCTAssertFalse(key.isEmpty)
+        } else {
+            XCTFail("Expected idempotency key")
+        }
     }
 
     func testRefreshBuildsRequestWithIdempotencyKey() async throws {
@@ -55,6 +59,10 @@ final class NetworkAuthAPIServiceTests: XCTestCase {
 
         XCTAssertEqual(request.path, "/api/v1/auth/refresh-tokens")
         XCTAssertEqual(json["refreshToken"] as? String, "refresh-token")
-        XCTAssertFalse((request.headers["Idempotency-Key"] ?? "").isEmpty)
+        if case let .key(key) = request.idempotency {
+            XCTAssertFalse(key.isEmpty)
+        } else {
+            XCTFail("Expected idempotency key")
+        }
     }
 }
