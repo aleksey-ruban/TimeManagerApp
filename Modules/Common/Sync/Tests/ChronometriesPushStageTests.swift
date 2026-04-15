@@ -61,7 +61,8 @@ final class ChronometriesPushStageTests: XCTestCase {
     }
 }
 
-private actor UserProfileServiceStub: UserProfileServiceProtocol {
+private final class UserProfileServiceStub: UserProfileServiceProtocol, @unchecked Sendable {
+    private let lock = NSLock()
     let snapshotVersion: SnapshotVersion
 
     init(snapshotVersion: SnapshotVersion) {
@@ -69,11 +70,25 @@ private actor UserProfileServiceStub: UserProfileServiceProtocol {
     }
 
     func fetchUser() async throws -> User {
-        User(firstName: nil, email: nil, snapshotVersion: snapshotVersion)
+        lock.withLock {
+            User(firstName: nil, email: nil, snapshotVersion: snapshotVersion)
+        }
+    }
+
+    func cachedUser() -> User? {
+        lock.withLock {
+            User(firstName: nil, email: nil, snapshotVersion: snapshotVersion)
+        }
+    }
+
+    func cachedSessions() -> UserSessions? {
+        UserSessions(currentSessionID: 0, sessions: [])
     }
 
     func updateProfile(name: String) async throws -> User {
-        User(firstName: name, email: nil, snapshotVersion: snapshotVersion)
+        lock.withLock {
+            User(firstName: name, email: nil, snapshotVersion: snapshotVersion)
+        }
     }
 
     func deleteUser() async throws {}
@@ -87,7 +102,9 @@ private actor UserProfileServiceStub: UserProfileServiceProtocol {
     func logoutOtherDevices() async throws {}
 
     func currentSnapshotVersion() async -> SnapshotVersion {
-        snapshotVersion
+        lock.withLock {
+            snapshotVersion
+        }
     }
 
     func updateSnapshotVersion(_ snapshotVersion: SnapshotVersion) async {}
@@ -95,4 +112,12 @@ private actor UserProfileServiceStub: UserProfileServiceProtocol {
     func clearUser() async {}
 
     func clearSessions() async {}
+}
+
+private extension NSLock {
+    func withLock<T>(_ body: () throws -> T) rethrows -> T {
+        lock()
+        defer { unlock() }
+        return try body()
+    }
 }

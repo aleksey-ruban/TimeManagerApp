@@ -69,10 +69,15 @@ final class AuthFlowServiceSpy: AuthFlowServiceProtocol, @unchecked Sendable {
 }
 
 final class AuthFeatureServiceSpy: AuthFeatureServiceProtocol, @unchecked Sendable {
+    var launchAuthorizationStateResult: AuthLaunchAuthorizationState = .unauthenticated
     var loginResult: Result<Void, Error> = .success(())
     var currentDeviceIDResult: Result<String, Error> = .success("device-id")
 
     private(set) var loginArguments: (email: String, password: String)?
+
+    func launchAuthorizationState() async -> AuthLaunchAuthorizationState {
+        launchAuthorizationStateResult
+    }
 
     func login(email: String, password: String) async throws {
         loginArguments = (email, password)

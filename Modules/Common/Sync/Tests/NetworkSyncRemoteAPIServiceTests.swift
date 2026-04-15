@@ -24,7 +24,7 @@ final class NetworkSyncRemoteAPIServiceTests: XCTestCase {
             )
         ])
 
-        let request = try XCTUnwrap(await executor.lastRequest)
+        let request = try XCTUnwrap(executor.lastRequest)
         XCTAssertEqual(request.path, "/api/v1/activities/sync/push")
         XCTAssertNotNil(request.headers["Content-Type"])
 
@@ -73,7 +73,7 @@ final class NetworkSyncRemoteAPIServiceTests: XCTestCase {
             )
         ])
 
-        let request = try XCTUnwrap(await executor.lastRequest)
+        let request = try XCTUnwrap(executor.lastRequest)
         guard case let .data(body, _) = try XCTUnwrap(request.body) else {
             return XCTFail("Expected data body")
         }
@@ -119,7 +119,7 @@ final class NetworkSyncRemoteAPIServiceTests: XCTestCase {
         )
 
         let afterPush = Date()
-        let request = try XCTUnwrap(await executor.lastRequest)
+        let request = try XCTUnwrap(executor.lastRequest)
         guard case let .data(body, _) = try XCTUnwrap(request.body) else {
             return XCTFail("Expected data body")
         }
@@ -140,21 +140,37 @@ final class NetworkSyncRemoteAPIServiceTests: XCTestCase {
     }
 }
 
-private actor NetworkExecutorSpy: INetworkExecutor {
-    private(set) var lastRequest: NetworkRequest?
+private final class NetworkExecutorSpy: INetworkExecutor, @unchecked Sendable {
+    private let lock = NSLock()
+    private var _lastRequest: NetworkRequest?
+
+    var lastRequest: NetworkRequest? {
+        lock.withLock {
+            _lastRequest
+        }
+    }
 
     func execute(_ request: NetworkRequest) async throws -> NetworkResponse {
-        lastRequest = request
-        return NetworkResponse(data: Data(#"{"results":[]}"#.utf8), response: httpResponse(statusCode: 200))
+        record(request)
+        return NetworkResponse(
+            data: Data(#"{"message":"OK","data":{"results":[]}}"#.utf8),
+            response: httpResponse(statusCode: 200)
+        )
     }
 
     func execute<Output>(
         _ request: NetworkRequest,
         parser: Parser<Output>
     ) async throws -> Output where Output: Decodable {
-        lastRequest = request
-        let data = Data(#"{"results":[]}"#.utf8)
+        record(request)
+        let data = Data(#"{"message":"OK","data":{"results":[]}}"#.utf8)
         return try parser.parse(data)
+    }
+
+    private func record(_ request: NetworkRequest) {
+        lock.withLock {
+            _lastRequest = request
+        }
     }
 }
 
@@ -173,4 +189,12 @@ private func httpResponse(statusCode: Int) -> HTTPURLResponse {
         httpVersion: nil,
         headerFields: nil
     )!
+}
+
+private extension NSLock {
+    func withLock<T>(_ body: () throws -> T) rethrows -> T {
+        lock()
+        defer { unlock() }
+        return try body()
+    }
 }

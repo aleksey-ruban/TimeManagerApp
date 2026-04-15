@@ -39,6 +39,14 @@ final class ActivitySyncRepository: @unchecked Sendable {
                     continue
                 }
 
+                // Preserve a local tombstone so the delete can still be pushed to the server.
+                if let existing, existing.isDirty, existing.syncDeleted {
+                    existing.remoteID = NSNumber(value: remote.id)
+                    existing.lastModifiedVersion = NSNumber(value: remote.lastModifiedVersion)
+                    applied += 1
+                    continue
+                }
+
                 let object = existing ?? ActivityMO(context: context)
                 if existing == nil {
                     object.localID = UUID()
@@ -103,7 +111,20 @@ final class ActivitySyncRepository: @unchecked Sendable {
         with remoteVariations: [RemoteVariationDTO],
         context: NSManagedObjectContext
     ) {
-        let current = activity.variations ?? []
+        let current = (activity.variations ?? []).sorted { lhs, rhs in
+            let lhsRemoteID = lhs.remoteIDValue ?? .min
+            let rhsRemoteID = rhs.remoteIDValue ?? .min
+
+            if lhsRemoteID != rhsRemoteID {
+                return lhsRemoteID < rhsRemoteID
+            }
+
+            if lhs.position != rhs.position {
+                return lhs.position < rhs.position
+            }
+
+            return lhs.localID.uuidString < rhs.localID.uuidString
+        }
         var existingByRemoteID: [Int64: ActivityVariationMO] = [:]
         var localOnlyVariations: [ActivityVariationMO] = []
 

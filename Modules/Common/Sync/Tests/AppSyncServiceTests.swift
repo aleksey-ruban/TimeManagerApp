@@ -56,15 +56,18 @@ final class AppSyncServiceTests: XCTestCase {
         )
 
         let result = try await service.run(trigger: .manual)
+        let currentSnapshotVersion = await userProfileService.currentSnapshotVersion()
+        let observedSnapshotVersion = await pushStage.observedSnapshotVersionValue()
 
         XCTAssertEqual(result.stageResults.count, 1)
         XCTAssertEqual(result.stageResults.first?.direction, .push)
-        XCTAssertEqual(await userProfileService.currentSnapshotVersion(), SnapshotVersion(Int64(135)))
-        XCTAssertEqual(await pushStage.observedSnapshotVersion, SnapshotVersion(Int64(135)))
+        XCTAssertEqual(currentSnapshotVersion, SnapshotVersion(Int64(135)))
+        XCTAssertEqual(observedSnapshotVersion, SnapshotVersion(Int64(135)))
     }
 }
 
-private actor RecordingUserProfileService: UserProfileServiceProtocol {
+private final class RecordingUserProfileService: UserProfileServiceProtocol, @unchecked Sendable {
+    private let lock = NSLock()
     private var snapshotVersion: SnapshotVersion
 
     init(snapshotVersion: SnapshotVersion) {
@@ -72,11 +75,25 @@ private actor RecordingUserProfileService: UserProfileServiceProtocol {
     }
 
     func fetchUser() async throws -> User {
-        User(firstName: nil, email: nil, snapshotVersion: snapshotVersion)
+        lock.withLock {
+            User(firstName: nil, email: nil, snapshotVersion: snapshotVersion)
+        }
+    }
+
+    func cachedUser() -> User? {
+        lock.withLock {
+            User(firstName: nil, email: nil, snapshotVersion: snapshotVersion)
+        }
+    }
+
+    func cachedSessions() -> UserSessions? {
+        UserSessions(currentSessionID: 0, sessions: [])
     }
 
     func updateProfile(name: String) async throws -> User {
-        User(firstName: name, email: nil, snapshotVersion: snapshotVersion)
+        lock.withLock {
+            User(firstName: name, email: nil, snapshotVersion: snapshotVersion)
+        }
     }
 
     func deleteUser() async throws {}
@@ -90,11 +107,15 @@ private actor RecordingUserProfileService: UserProfileServiceProtocol {
     func logoutOtherDevices() async throws {}
 
     func currentSnapshotVersion() async -> SnapshotVersion {
-        snapshotVersion
+        lock.withLock {
+            snapshotVersion
+        }
     }
 
     func updateSnapshotVersion(_ snapshotVersion: SnapshotVersion) async {
-        self.snapshotVersion = snapshotVersion
+        lock.withLock {
+            self.snapshotVersion = snapshotVersion
+        }
     }
 
     func clearUser() async {}
@@ -168,5 +189,17 @@ private actor SnapshotVersionAssertingPushStage: SyncPushStageProtocol {
     func execute(context: SyncExecutionContext) async throws -> Int {
         observedSnapshotVersion = await userProfileService.currentSnapshotVersion()
         return 1
+    }
+
+    func observedSnapshotVersionValue() -> SnapshotVersion? {
+        observedSnapshotVersion
+    }
+}
+
+private extension NSLock {
+    func withLock<T>(_ body: () throws -> T) rethrows -> T {
+        lock()
+        defer { unlock() }
+        return try body()
     }
 }
