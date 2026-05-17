@@ -21,7 +21,7 @@ private enum AppIdentity {
 private enum NetworkSettings {
     static let localDynamicBaseURL = "http://10.0.1.28:8080"
     static let localBaseURL = "http://10.0.1.2:80"
-    static let globalBaseURL = "https://armap-design.ru"
+    static let globalBaseURL = "https://timespan.pro"
 }
 
 private let baseSettings: SettingsDictionary = [
